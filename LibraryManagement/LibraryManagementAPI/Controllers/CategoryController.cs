@@ -34,7 +34,7 @@ namespace LibraryManagementAPI.Controllers
             try
             {
                 var categoriesInDb = await _context.Categories
-                                            .Select(a => a.Name)
+                                            .Select(c => c.Name)
                                             .ToListAsync();
 
                 var categoriesList = new List<Category>();
@@ -52,10 +52,10 @@ namespace LibraryManagementAPI.Controllers
                 _context.Categories.AddRange(categoriesList);
                 await _context.SaveChangesAsync();
 
-                var response = categoriesList.Select(a => new CategoryResponse
+                var response = categoriesList.Select(c => new CategoryResponse
                 {
-                    CategoryId = a.ID,
-                    Name = a.Name
+                    CategoryId = c.ID,
+                    Name = c.Name
                 });
 
                 return CreatedAtAction(nameof(CreateCategories), response);
@@ -110,10 +110,10 @@ namespace LibraryManagementAPI.Controllers
             try
             {
                 var response = await _context.Categories
-                    .Select(a => new CategoryResponse
+                    .Select(c => new CategoryResponse
                     {
-                        CategoryId = a.ID,
-                        Name = a.Name
+                        CategoryId = c.ID,
+                        Name = c.Name
                     })
                     .ToListAsync();
 
