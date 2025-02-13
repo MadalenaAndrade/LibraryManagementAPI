@@ -11,10 +11,10 @@ namespace EFCoreClasses.Models
     public class BookCategory 
     {
         public long SerialNumber { get; set; }
-        public virtual required Book Book { get; set; }
+        public virtual Book Book { get; set; }
 
 
         public short CategoryID { get; set; }
-        public virtual required Category Category { get; set; }
+        public virtual Category Category { get; set; }
     }
 }

@@ -16,11 +16,11 @@ namespace EFCoreClasses.Models
 
         [ForeignKey("Client")]
         public int ClientID { get; set; }
-        public virtual required Client Client { get; set; }
+        public virtual Client Client { get; set; }
 
         [ForeignKey("BookCopy")]
         public int BookCopyID { get; set; }
-        public virtual required BookCopy BookCopy { get; set; }
+        public virtual BookCopy BookCopy { get; set; }
 
         [Required]
         public DateTime StartDate { get; set; }
@@ -28,6 +28,6 @@ namespace EFCoreClasses.Models
         [Required]
         public DateTime DueDate { get; set; }
         
-        public virtual required RentReception RentReception { get; set; }
+        public virtual RentReception RentReception { get; set; }
     }
 }

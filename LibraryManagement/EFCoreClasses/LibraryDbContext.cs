@@ -14,6 +14,7 @@ namespace EFCoreClasses
         public DbSet<Category> Categories { get; set; }
         public DbSet<Book> Books { get; set; }
         public DbSet<BookAuthor> BookAuthors { get; set; }
+        public DbSet<BookCategory> BookCategories { get; set; }
         public DbSet<BookStock> BookStocks { get; set; }
         public DbSet<BookCondition> BookConditions { get; set; }
         public DbSet<BookCopy> BookCopies { get; set; }

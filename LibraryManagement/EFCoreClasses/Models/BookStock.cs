@@ -13,7 +13,7 @@ namespace EFCoreClasses.Models
     {
         [Key]
         public long SerialNumber { get; set; }
-        public virtual required Book Book { get; set; }
+        public virtual Book Book { get; set; }
 
         [Required]
         public short TotalAmount { get; set; }

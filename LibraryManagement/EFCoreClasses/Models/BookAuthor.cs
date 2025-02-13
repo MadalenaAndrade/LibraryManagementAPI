@@ -12,10 +12,10 @@ namespace EFCoreClasses.Models
     public class BookAuthor
     {
         public long SerialNumber { get; set; }
-        public virtual required Book Book { get; set; }
+        public virtual Book Book { get; set; }
         
 
         public long AuthorID { get; set; }
-        public virtual required Author Author { get; set; } 
+        public virtual Author Author { get; set; } 
     }
 }

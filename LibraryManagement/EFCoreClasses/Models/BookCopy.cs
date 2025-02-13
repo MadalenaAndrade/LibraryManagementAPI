@@ -16,14 +16,14 @@ namespace EFCoreClasses.Models
 
         [ForeignKey("Book")]
         public long SerialNumber { get; set; }
-        public virtual required Book Book { get; set; }
+        public virtual Book Book { get; set; }
 
         [ForeignKey("BookCondition")]
         public short BookConditionID { get; set; }
-        public virtual required BookCondition BookCondition { get; set; }
+        public virtual BookCondition BookCondition { get; set; }
 
         [Required, Column(TypeName = "nvarchar(max)")]
-        public required string Notes { get; set; }
+        public string Notes { get; set; }
 
         public virtual ICollection<Rent> Rents { get; set; } = new List<Rent>();
     }

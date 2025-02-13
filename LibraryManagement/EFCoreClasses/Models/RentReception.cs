@@ -13,14 +13,14 @@ namespace EFCoreClasses.Models
     {
         [Key]
         public long RentID { get; set; }
-        public virtual required Rent Rent { get; set; }
+        public virtual Rent Rent { get; set; }
 
         [Required] 
         public DateTime ReturnDate { get; set; }
 
         [ForeignKey("BookCondition")]
         public short ReceivedConditionID { get; set; }
-        public virtual required BookCondition BookCondition { get; set; }
+        public virtual BookCondition BookCondition { get; set; }
 
         [Required, Column(TypeName = "decimal(7,2)")]
         public decimal TotalFine { get; set; }
