@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Swashbuckle.AspNetCore.Annotations;
@@ -43,6 +44,21 @@ namespace LibraryManagementAPI.DTOs
         public short TotalAmount { get; set; }
     }
 
+    public class BookQueryRequest
+    {
+        [NumberValidation(1, 13, ErrorMessage = "Serial Number must be positive and have exactly 13 digits")]
+        public long? SerialNumber { get; set; }
+        
+        public string? Title { get; set;  }
+
+        [YearValidation(1900, ErrorMessage = "Published year must be after 1900 and before the current year")]
+        public short? Year { get; set; }
+
+        public string? Publisher {  get; set; }
+        public string? Author { get; set; }
+        public string? Category { get; set; }
+    }
+
     public class BookResponse
     {
         [Required]
@@ -63,5 +79,8 @@ namespace LibraryManagementAPI.DTOs
 
         [Required]
         public short TotalAmount { get; set; }
+
+        [Required]
+        public short AvailableAmount { get; set; }
     }
 }

@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace EFCoreClasses.Migrations
 {
     /// <inheritdoc />
@@ -277,6 +279,18 @@ namespace EFCoreClasses.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.InsertData(
+                schema: "LibraryHub",
+                table: "BookCondition",
+                columns: new[] { "ID", "Condition", "FineModifier" },
+                values: new object[,]
+                {
+                    { (short)1, "As new", 1m },
+                    { (short)2, "Good", 0.75m },
+                    { (short)3, "Used", 0.5m },
+                    { (short)4, "Bad", 0.25m }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Book_PublisherID",
                 schema: "LibraryHub",
@@ -294,6 +308,13 @@ namespace EFCoreClasses.Migrations
                 schema: "LibraryHub",
                 table: "BookCategory",
                 column: "CategoryID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookCondition_ID",
+                schema: "LibraryHub",
+                table: "BookCondition",
+                column: "ID",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookCopy_BookConditionID",

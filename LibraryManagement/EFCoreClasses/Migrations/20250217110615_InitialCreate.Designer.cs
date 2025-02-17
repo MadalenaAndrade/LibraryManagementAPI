@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFCoreClasses.Migrations
 {
     [DbContext(typeof(LibraryDbContext))]
-    [Migration("20250213132713_UpdateBookConditionConfiguration")]
-    partial class UpdateBookConditionConfiguration
+    [Migration("20250217110615_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

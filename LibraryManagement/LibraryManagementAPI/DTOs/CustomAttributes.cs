@@ -47,6 +47,8 @@ namespace LibraryManagementAPI.DTOs
 
             public override bool IsValid(object value)
             {
+                if (value == null)
+                    return true;
 
                 // Tries to convert the object to "single-precision floating-point number" to allow the attribute compatibility with other datatypes,
                 // ToDo apply method to consider how the values are rounded by default
@@ -78,6 +80,9 @@ namespace LibraryManagementAPI.DTOs
 
             public override bool IsValid(object value)
             {
+                if (value == null) 
+                    return true;
+
                 short year = (short)value;
                 short maxYear = (short)DateTime.Now.Year;
 

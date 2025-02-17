@@ -160,7 +160,7 @@ namespace LibraryManagementAPI.Controllers
 
         [HttpDelete]
         [SwaggerResponse(200, Type = typeof(string))]
-        public async Task<IActionResult> DeleteAuthor([FromQuery] long id)
+        public async Task<IActionResult> DeleteAuthor([FromQuery, Required] long id)
         {
             if (id <= 0)
                 return BadRequest("Author ID must be a positive integer");

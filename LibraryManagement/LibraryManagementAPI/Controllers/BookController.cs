@@ -1,12 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using Azure;
 using EFCoreClasses;
 using EFCoreClasses.Models;
 using LibraryManagementAPI.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace LibraryManagementAPI.Controllers
@@ -181,7 +184,8 @@ namespace LibraryManagementAPI.Controllers
                     PublisherName = b.Publisher.Name,
                     AuthorName = b.BookAuthors.Select(ba => ba.Author.Name).ToList(),
                     CategoryName = b.BookCategories.Select(bc => bc.Category.Name).ToList(),
-                    TotalAmount = b.BookStock.TotalAmount
+                    TotalAmount = b.BookStock.TotalAmount,
+                    AvailableAmount = b.BookStock.TotalAmount
                 });
 
                 return Ok(response);
@@ -195,5 +199,96 @@ namespace LibraryManagementAPI.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        [HttpGet]
+        [SwaggerResponse(200, Type = typeof(BookResponse))]
+        public async Task<IActionResult> GetBooks([FromQuery] BookQueryRequest filter)
+        {
+            if (filter.SerialNumber == null && filter.Title == null && filter.Year == null && filter.Publisher == null && filter.Author == null && filter.Category == null)    
+            {
+                return BadRequest("At least one filter (Serial Number, Title, Year, Publisher, Author, or Category) must be provided.");
+            }
+
+            try
+            {
+                // did LINQ through query method, due to the complexy of what I wanted (being more similar to sql)
+                var query = from book in _context.Books
+                            join bookAuthor in _context.BookAuthors on book.SerialNumber equals bookAuthor.SerialNumber
+                            join author in _context.Authors on bookAuthor.AuthorID equals author.ID
+                            join bookCategory in _context.BookCategories on book.SerialNumber equals bookCategory.SerialNumber
+                            join category in _context.Categories on bookCategory.CategoryID equals category.ID
+                            join publisher in _context.Publishers on book.PublisherID equals publisher.ID
+                            join bookStock in _context.BookStocks on book.SerialNumber equals bookStock.SerialNumber
+                            where (filter.SerialNumber == null || book.SerialNumber == filter.SerialNumber)
+                               && (filter.Title == null || book.Title.Contains(filter.Title))
+                               && (filter.Year == null || book.Year == filter.Year)
+                               && (filter.Publisher == null || publisher.Name.Contains(filter.Publisher))
+                               && (filter.Author == null || author.Name.Contains(filter.Author))
+                               && (filter.Category == null || category.Name.Contains(filter.Category))
+                            group new { book, author, category, publisher, bookStock } by new
+                            {
+                                book.SerialNumber,
+                                book.Title,
+                                book.Year,
+                                book.FinePerDay,
+                                publisher.Name,
+                                bookStock.TotalAmount,
+                                bookStock.AvailableAmount
+                            } into grouped
+                            select new BookResponse
+                            {
+                                SerialNumber = grouped.Key.SerialNumber,
+                                Title = grouped.Key.Title,
+                                Year = grouped.Key.Year,
+                                FinePerDay = grouped.Key.FinePerDay,
+                                PublisherName = grouped.Key.Name,
+                                AuthorName = grouped.Select(g => g.author.Name).Distinct().ToList(),
+                                CategoryName = grouped.Select(g => g.category.Name).Distinct().ToList(),
+                                TotalAmount = grouped.Key.TotalAmount,
+                                AvailableAmount = grouped.Key.AvailableAmount
+                            };
+
+                var result = await query.ToListAsync();
+
+                if (result.IsNullOrEmpty())
+                    return NotFound("Book not found");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("books-list")]
+        [SwaggerResponse(200, Type = typeof(BookResponse))]
+        public async Task<IActionResult> GetAllBooks()
+        {
+            try
+            {
+                var response = await _context.Books
+                    .Select(b => new BookResponse
+                    {
+                        SerialNumber = b.SerialNumber,
+                        Title = b.Title,
+                        Year = b.Year,
+                        FinePerDay = b.FinePerDay,
+                        PublisherName = b.Publisher.Name,
+                        AuthorName = b.BookAuthors.Select(ba => ba.Author.Name).ToList(),
+                        CategoryName = b.BookCategories.Select(bc => bc.Category.Name).ToList(),
+                        TotalAmount = b.BookStock.TotalAmount,
+                        AvailableAmount = b.BookStock.AvailableAmount
+                    })
+                    .ToListAsync();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+                
     }
 }
