@@ -101,7 +101,7 @@ namespace LibraryManagementAPI.Controllers
             }
         }
 
-        [HttpGet("publishers-list")]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(PublisherResponse))]
         public async Task<IActionResult> GetAllPublishers()
         {

@@ -103,7 +103,7 @@ namespace LibraryManagementAPI.Controllers
             }
         }
 
-        [HttpGet("authors-list")]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(AuthorResponse))]
         public async Task<IActionResult> GetAllAuthors()
         {

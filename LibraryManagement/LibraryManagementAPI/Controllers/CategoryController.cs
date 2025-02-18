@@ -103,7 +103,7 @@ namespace LibraryManagementAPI.Controllers
             }
         }
 
-        [HttpGet("categories-list")]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(CategoryResponse))]
         public async Task<IActionResult> GetAllCategories()
         {
