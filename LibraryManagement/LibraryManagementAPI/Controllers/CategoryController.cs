@@ -142,6 +142,7 @@ namespace LibraryManagementAPI.Controllers
                     return NotFound("Category not found");
 
                 category.Name = request.Name;
+                _context.Categories.Update(category);
                 await _context.SaveChangesAsync();
 
                 var response = new CategoryResponse

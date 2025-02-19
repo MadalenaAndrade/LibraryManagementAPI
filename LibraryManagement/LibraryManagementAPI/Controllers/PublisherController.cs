@@ -140,6 +140,7 @@ namespace LibraryManagementAPI.Controllers
                     return NotFound("Publisher not found");
 
                 publisher.Name = request.Name;
+                _context.Publishers.Update(publisher);
                 await _context.SaveChangesAsync();
 
                 var response = new PublisherResponse

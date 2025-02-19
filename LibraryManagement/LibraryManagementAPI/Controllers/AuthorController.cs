@@ -142,6 +142,8 @@ namespace LibraryManagementAPI.Controllers
                     return NotFound("Author not found");
 
                 author.Name = request.Name;
+                _context.Authors.Update(author);
+
                 await _context.SaveChangesAsync();
 
                 var response = new AuthorResponse

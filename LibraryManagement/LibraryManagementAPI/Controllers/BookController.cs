@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Azure;
+using Azure.Core;
 using EFCoreClasses;
 using EFCoreClasses.Models;
 using LibraryManagementAPI.DTOs;
@@ -291,7 +292,7 @@ namespace LibraryManagementAPI.Controllers
             }
         }
 
-        [HttpPatch]
+        [HttpPatch("details")]
         [SwaggerResponse(200, Type = typeof(UpdateBookResponse))]
         public async Task<IActionResult> UpdateBook([FromQuery, Required] long serialNumber, [FromBody] UpdateBookRequest request)
         {
@@ -363,6 +364,7 @@ namespace LibraryManagementAPI.Controllers
                     book.PublisherID = existingPublisher.ID;
                 }
 
+                _context.Books.Update(book);
                 await _context.SaveChangesAsync();
 
                 var response = new UpdateBookResponse
@@ -421,10 +423,10 @@ namespace LibraryManagementAPI.Controllers
 
                 if (bookAuthor != null)
                 {
-                    // Detach the entity to prevent multiple tracking issues
+                    // If it exists, detach the entity to prevent multiple tracking issues
                     _context.Entry(bookAuthor).State = EntityState.Detached;
 
-                    // remove old author relationship to avoid key conflits
+                    // remove old author relationship to avoid key conflits, as it will be later substituted by new author
                     _context.BookAuthors.Remove(bookAuthor);
                     await _context.SaveChangesAsync();
                 }
@@ -500,7 +502,7 @@ namespace LibraryManagementAPI.Controllers
 
                 if (bookCategory != null)
                 {
-                    // Detach the entity to prevent multiple tracking issues
+                    // Detach the entity to prevent multiple tracking issues ----- not sure if I should do something like this, as I am quite "forcing" the relationship
                     _context.Entry(bookCategory).State = EntityState.Detached;
 
                     // remove old category relationship to avoid key conflits
@@ -532,6 +534,135 @@ namespace LibraryManagementAPI.Controllers
                     CategoryNames = book.BookCategories.Select(ba => ba.Category.Name).ToList()
                 };
                 return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpDelete]
+        [SwaggerResponse(200, Type = typeof(string))]
+        public async Task<IActionResult> DeleteBook([FromQuery, Required] long serialNumber)
+        {
+            if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
+            {
+                return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
+            }
+
+            try
+            {
+                // check if book exists
+                var book = await _context.Books.Include(b => b.BookStock)
+                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+                if (book == null)
+                {
+                    return NotFound($"No book serial number {serialNumber} was found in the database");
+                }
+
+                // ensure book is not being rented
+                if (book.BookStock.AvailableAmount < book.BookStock.TotalAmount)
+                {
+                    return BadRequest($"There are books {book.Title} being rented");
+                }
+
+                _context.Books.Remove(book);
+                await _context.SaveChangesAsync();
+                return Ok($"Book '{book.Title}' deleted sucessfully");
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpDelete("author")]
+        [SwaggerResponse(200, Type = typeof(string))]
+        public async Task<IActionResult> DeleteBookAuthor([FromQuery, Required] long serialNumber, [FromBody, Required] string authorName)
+        {
+            if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
+            {
+                return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
+            }
+
+            try
+            {
+                // check if book exists and related author exists
+                var book = await _context.Books.Include(b => b.BookAuthors)
+                                               .ThenInclude(b => b.Author)
+                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+                if (book == null)
+                {
+                    return NotFound($"No book serial number {serialNumber} was found in the database");
+                }
+
+                var bookAuthor = book.BookAuthors.FirstOrDefault(ba => ba.Author.Name == authorName);
+
+                if (bookAuthor == null)
+                {
+                    return NotFound($"No author named '{authorName}' was found for this book.");
+                }
+
+                //check how many authors the book has, if only one it can't be deleted
+                if (book.BookAuthors.Count() < 2)
+                { 
+                    return BadRequest("The book only has one author. Please update it instead of deleting.");
+                }
+
+                // delete bookAuthor entry
+                _context.BookAuthors.Remove(bookAuthor);
+                await _context.SaveChangesAsync();
+
+                return Ok($"Author '{authorName}' was successfully removed from book '{book.Title}'.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpDelete("category")]
+        [SwaggerResponse(200, Type = typeof(string))]
+        public async Task<IActionResult> DeleteBookCategory([FromQuery, Required] long serialNumber, [FromBody, Required] string categoryName)
+        {
+            if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
+            {
+                return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
+            }
+
+            try
+            {
+                // check if book exists and related category exists
+                var book = await _context.Books.Include(b => b.BookCategories)
+                                               .ThenInclude(b => b.Category)
+                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+                if (book == null)
+                {
+                    return NotFound($"No book serial number {serialNumber} was found in the database");
+                }
+
+                var bookCategory = book.BookCategories.FirstOrDefault(ba => ba.Category.Name == categoryName);
+
+                if (bookCategory == null)
+                {
+                    return NotFound($"No category named '{categoryName}' was found for this book.");
+                }
+
+                //check how many categories the book has, if only one it can't be deleted
+                if (book.BookCategories.Count() < 2)
+                {
+                    return BadRequest("The book only has one category. Please update it instead of deleting.");
+                }
+
+                // delete bookCategory entry
+                _context.BookCategories.Remove(bookCategory);
+                await _context.SaveChangesAsync();
+
+                return Ok($"Category '{categoryName}' was successfully removed from book '{book.Title}'.");
             }
             catch (Exception ex)
             {
