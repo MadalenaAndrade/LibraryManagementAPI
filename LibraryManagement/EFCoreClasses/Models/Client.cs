@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -15,19 +16,19 @@ namespace EFCoreClasses.Models
         public int ID { get; set; }
 
         [Required, MaxLength(30)]
-        public required string Name { get; set; }
+        public string Name { get; set; }
 
         [Required]
         public DateOnly DateOfBirth { get; set; }
 
         [Required]
-        public int NIF { get; set; }
+        public required int NIF { get; set; }
 
         [Required]
         public int Contact {  get; set; }
 
         [Required]
-        public required string Address { get; set; }
+        public string Address { get; set; }
 
         public virtual ICollection<Rent> Rents { get; set; } = new List<Rent>();
     }

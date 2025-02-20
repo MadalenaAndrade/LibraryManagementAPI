@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace LibraryManagementAPI.DTOs
 {
@@ -90,6 +92,78 @@ namespace LibraryManagementAPI.DTOs
                     return false;
 
                 return true;
+            }
+        }
+
+        public class DateValidationAttribute : ValidationAttribute
+        {
+            private readonly string[] _requiredFormats;
+
+            public DateValidationAttribute(string requiredFormats)
+            {
+                _requiredFormats = requiredFormats.Split("||");
+            }
+
+            public override bool IsValid(object value)
+            {
+                if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                    return false;
+
+                string dateString = value.ToString();
+
+                if (string.IsNullOrWhiteSpace(dateString))
+                    return true;
+
+                foreach (var format in _requiredFormats)
+                {
+                    if (DateTime.TryParseExact(dateString, format.Trim(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var tempResult))
+                    {
+                        return true;
+                    }
+                        
+                }
+
+                return false;
+            }
+        }
+
+        public class NIFValidationAttribute : ValidationAttribute
+        {
+            public override bool IsValid(object value)
+            {
+                if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                    return false;
+
+                string nifNumber = value.ToString();
+
+                return ValidateNIF(nifNumber);
+            }
+
+            private bool ValidateNIF(string nifNumber)
+            {
+                int numberLength = 9; //NIF has always 9 numbers
+
+                string filteredNumber = Regex.Match(nifNumber, @"[0-9]+").Value; // extract number
+
+                if (filteredNumber.Length != numberLength || int.Parse(filteredNumber[0].ToString()) == 0)
+                    return false;
+
+                int checkSum = 0;
+
+                for (int i = 0; i < numberLength -1; i++)
+                {
+                    checkSum += (int.Parse(filteredNumber[i].ToString())) * (numberLength - i);
+                }
+
+                int verifiedDigit = 11 - (checkSum % 11);
+
+                if (verifiedDigit > 9) 
+                {
+                    verifiedDigit = 0;
+                }
+
+                return verifiedDigit == int.Parse(filteredNumber[numberLength - 1].ToString());
+
             }
         }
     }
