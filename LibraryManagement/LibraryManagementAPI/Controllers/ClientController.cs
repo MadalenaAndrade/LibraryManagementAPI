@@ -140,7 +140,7 @@ namespace LibraryManagementAPI.Controllers
         {
             if (filter.Id == null && filter.NIF == null)
             {
-                return BadRequest("At Client Id or NIF must be provided.");
+                return BadRequest("A Client Id or NIF must be provided.");
             }
 
             if (request.Contact == null && request.Address == null)

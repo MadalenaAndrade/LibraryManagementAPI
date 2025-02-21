@@ -107,7 +107,7 @@ namespace LibraryManagementAPI.DTOs
             public override bool IsValid(object value)
             {
                 if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
-                    return false;
+                    return true;
 
                 string dateString = value.ToString();
 
