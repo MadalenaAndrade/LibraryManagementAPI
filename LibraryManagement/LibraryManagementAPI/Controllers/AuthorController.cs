@@ -3,8 +3,6 @@ using Azure.Core;
 using EFCoreClasses;
 using EFCoreClasses.Models;
 using LibraryManagementAPI.DTOs;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
@@ -12,7 +10,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("Authors")]
     public class AuthorController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -23,172 +21,111 @@ namespace LibraryManagementAPI.Controllers
         }
 
         [HttpPost]
-        [SwaggerResponse(200, Type = typeof(AuthorResponse))]
-        public async Task<IActionResult> CreateAuthors([FromBody, Required] IEnumerable<AuthorRequest> authors)
+        [SwaggerResponse(201)]
+        public async Task<ActionResult> CreateAuthors([FromBody, Required] AuthorRequest author)
         {
-            if (authors == null || !authors.Any())
+            // verifies first the validation of the DTO
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (_context.Authors.Any(a => a.Name == author.Name))
             {
-                return BadRequest("At least one author must be provided.");
+                ModelState.AddModelError("Name", $"Author with name '{author.Name}' already exists");
+                return BadRequest(ModelState);
             }
 
-            try
+            var newAuthor = new Author
             {
-                var authorsInDb = await _context.Authors
-                                            .Select(a => a.Name)
-                                            .ToListAsync();
-                
-                var authorsList = new List<Author>();
+                Name = author.Name
+            };
 
-                foreach (var authorRequest in authors)
-                {
-                    if (authorsInDb.Contains(authorRequest.Name))
-                    {
-                        throw new MyException($"Author with name '{authorRequest.Name}' already exists");
-                    }
+            _context.Authors.Add(newAuthor);
+            await _context.SaveChangesAsync();
 
-                    authorsList.Add(new Author { Name = authorRequest.Name });
-                }
+            return CreatedAtAction(nameof(GetAuthorByID), new { id = newAuthor.ID }, null);
+        }
 
-                _context.Authors.AddRange(authorsList);
-                await _context.SaveChangesAsync();
+        [HttpGet("{id}")]
+        [SwaggerResponse(200, Type = typeof(AuthorResponse))]
+        public async Task<ActionResult<AuthorResponse>> GetAuthorByID(long id)
+        {
 
-                var response = authorsList.Select(a => new AuthorResponse
-                {
-                    AuthorId = a.ID,
-                    Name = a.Name
-                });
+            if (id <= 0)
+                return BadRequest("Author ID must be a positive integer");
 
-                return CreatedAtAction(nameof(CreateAuthors), response);
-            }
-            catch (MyException ex)
+            var author = await _context.Authors.FindAsync(id);
+
+            if (author == null)
+                return NotFound("Author not found");
+
+            var response = new AuthorResponse
             {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+                AuthorId = author.ID,
+                Name = author.Name
+            };
+
+            return Ok(response);
         }
 
         [HttpGet]
-        [SwaggerResponse(200, Type = typeof(AuthorResponse))]
-        public async Task<IActionResult> GetAuthorByID([FromQuery, Required] long id)
+        [SwaggerResponse(200, Type = typeof(List<AuthorResponse>))]
+        public async Task<ActionResult<List<AuthorResponse>>> GetAllAuthors()
         {
-
-            if (id <= 0)
-            {
-                return BadRequest("Author ID must be a positive integer");
-            }
-
-            try
-            {
-                var author = await _context.Authors.FindAsync(id);
-
-                if (author == null)
+            var response = await _context.Authors
+                .Select(a => new AuthorResponse
                 {
-                    return NotFound("Author not found");
-                }
+                    AuthorId = a.ID,
+                    Name = a.Name
+                })
+                .ToListAsync();
 
-                var response = new AuthorResponse
-                {
-                    AuthorId = author.ID,
-                    Name = author.Name
-                };
-                
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+            return Ok(response);
         }
 
-        [HttpGet("list")]
-        [SwaggerResponse(200, Type = typeof(AuthorResponse))]
-        public async Task<IActionResult> GetAllAuthors()
+        [HttpPut("{id}")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> UpdateAuthor(long id, [FromBody, Required] AuthorRequest request)
         {
-            try
-            {
-                var response = await _context.Authors
-                    .Select(a => new AuthorResponse
-                    {
-                        AuthorId = a.ID,
-                        Name = a.Name
-                    })
-                    .ToListAsync();
-
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpPatch] // Patch is a better option? I only want to update the author name and only if ID exists
-        [SwaggerResponse(200, Type = typeof(AuthorResponse))]
-        public async Task<IActionResult> UpdateAuthor([FromQuery, Required] long id, [FromBody, Required] AuthorRequest request)
-        {
-            if (id <= 0)
-            {
-                return BadRequest("Author ID must be a positive integer");
-            }
-
-            try
-            {
-                var author = await _context.Authors.FindAsync(id);
-
-                if (author == null)
-                    return NotFound("Author not found");
-
-                author.Name = request.Name;
-                _context.Authors.Update(author);
-
-                await _context.SaveChangesAsync();
-
-                var response = new AuthorResponse
-                {
-                    AuthorId = author.ID,
-                    Name = author.Name
-                };
-
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpDelete]
-        [SwaggerResponse(200, Type = typeof(string))]
-        public async Task<IActionResult> DeleteAuthor([FromQuery, Required] long id)
-        {
+            // initial dto validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            
             if (id <= 0)
                 return BadRequest("Author ID must be a positive integer");
+            
+            var author = await _context.Authors.FindAsync(id);
 
-            try
+            if (author == null)
+                return NotFound("Author not found");
+
+            if (_context.Authors.Any(a => a.Name == request.Name && a.ID != id))
             {
-                var author = await _context.Authors.FindAsync(id);
-
-                if (author == null)
-                    return NotFound("Author not found");
-
-                AuthorResponse authorDeleted = new AuthorResponse
-                {
-                    AuthorId = author.ID,
-                    Name = author.Name
-                };
-
-                _context.Authors.Remove(author);
-                await _context.SaveChangesAsync();
-
-                return Ok($"Author '{authorDeleted.Name}' was deleted");
+                ModelState.AddModelError("Name", $"Author with name '{request.Name}' already exists");
+                return BadRequest(ModelState);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+
+            author.Name = request.Name;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> DeleteAuthor(long id)
+        {
+            if (id <= 0)
+                return BadRequest($"Author ID must be a positive integer");
+
+            var author = await _context.Authors.FindAsync(id);
+
+            if (author == null)
+                return NotFound("Author not found");
+
+            _context.Authors.Remove(author);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

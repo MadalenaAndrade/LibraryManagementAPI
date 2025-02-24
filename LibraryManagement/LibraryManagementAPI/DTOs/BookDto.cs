@@ -34,13 +34,6 @@ namespace LibraryManagementAPI.DTOs
         [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
         public string PublisherName { get; set; }
 
-        [Required(ErrorMessage = "Author name is required")]
-        public List<string> AuthorName { get; set; }
-
-        [Required(ErrorMessage = "Category name is required")]
-        public List<string> CategoryName { get; set; }
-
-
         [Required(ErrorMessage = "The total amount of books is required")]
         [Range(1, 50, ErrorMessage = "Total amount of books must be between 1 and 50")]
         public short TotalAmount { get; set; }

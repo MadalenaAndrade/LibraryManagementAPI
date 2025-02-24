@@ -15,7 +15,7 @@ namespace EFCoreClasses.Models
         public short ID { get; set; }
 
         [Required, MaxLength(30)]
-        public required string Name { get; set; }
+        public string Name { get; set; }
 
         public virtual ICollection<BookCategory> BookCategories { get; set; } = new List<BookCategory>();
     }

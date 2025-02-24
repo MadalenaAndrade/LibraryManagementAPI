@@ -15,7 +15,7 @@ namespace EFCoreClasses.Models
         public long ID { get; set; } 
         
         [Required, MaxLength(30)]
-        public required string Name { get; set; } 
+        public string Name { get; set; }
         
         public virtual ICollection<BookAuthor> BookAuthors { get; set; } = new List<BookAuthor>(); // Navigation Property
     }

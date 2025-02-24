@@ -22,7 +22,7 @@ namespace EFCoreClasses.Models
         public DateOnly DateOfBirth { get; set; }
 
         [Required]
-        public required int NIF { get; set; }
+        public int NIF { get; set; }
 
         [Required]
         public int Contact {  get; set; }

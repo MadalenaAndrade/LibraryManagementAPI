@@ -127,7 +127,7 @@ namespace LibraryManagementAPI.Controllers
         // tried to apply pagination due to the possiblity of a big number of data
         [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(GetBookCopyResponse))]
-        public async Task<IActionResult> GetAllBookCopies(int pageNumber = 1, int pageSize = 10)
+        public async Task<IActionResult> GetAllBookCopies([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             if (pageNumber <= 0 || pageSize <= 0)
                 return BadRequest("Page number and page size must be greater than 0.");

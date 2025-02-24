@@ -12,7 +12,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("Categories")]
     public class CategoryController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -23,92 +23,55 @@ namespace LibraryManagementAPI.Controllers
         }
 
         [HttpPost]
-        [SwaggerResponse(200, Type = typeof(CategoryResponse))]
-        public async Task<IActionResult> CreateCategories([FromBody, Required] IEnumerable<CategoryRequest> categories)
+        [SwaggerResponse(201)]
+        public async Task<ActionResult> CreateCategories([FromBody, Required] CategoryRequest category)
         {
-            if (categories == null || !categories.Any())
+            // verifies first the validation of the DTO
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (_context.Categories.Any(c => c.Name == category.Name))
             {
-                return BadRequest("At least one category must be provided.");
+                ModelState.AddModelError("Name", $"Category with name '{category.Name}' already exists");
+                return BadRequest(ModelState);
             }
 
-            try
+            var newCategory = new Category
             {
-                var categoriesInDb = await _context.Categories
-                                            .Select(c => c.Name)
-                                            .ToListAsync();
+                Name = category.Name
+            };
 
-                var categoriesList = new List<Category>();
+            _context.Categories.Add(newCategory);
+            await _context.SaveChangesAsync();
 
-                foreach (var categoryRequest in categories)
-                {
-                    if (categoriesInDb.Contains(categoryRequest.Name))
-                    {
-                        throw new MyException($"Category with name '{categoryRequest.Name}' already exists");
-                    }
+            return CreatedAtAction(nameof(GetCategoryByID), new { id = newCategory.ID}, null);
+        }
 
-                    categoriesList.Add(new Category { Name = categoryRequest.Name });
-                }
+        [HttpGet("{id}")]
+        [SwaggerResponse(200, Type = typeof(CategoryResponse))]
+        public async Task<ActionResult<CategoryResponse>> GetCategoryByID(short id)
+        {
+            if (id <= 0)
+                return BadRequest("Category ID must be a positive integer");
 
-                _context.Categories.AddRange(categoriesList);
-                await _context.SaveChangesAsync();
+            var category = await _context.Categories.FindAsync(id);
 
-                var response = categoriesList.Select(c => new CategoryResponse
-                {
-                    CategoryId = c.ID,
-                    Name = c.Name
-                });
+            if (category == null)
+                return NotFound("Category not found");
 
-                return CreatedAtAction(nameof(CreateCategories), response);
-            }
-            catch (MyException ex)
+            var response = new CategoryResponse
             {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+                CategoryId = category.ID,
+                Name = category.Name
+            };
+
+            return Ok(response);
         }
 
         [HttpGet]
-        [SwaggerResponse(200, Type = typeof(CategoryResponse))]
-        public async Task<IActionResult> GetCategoryByID([FromQuery, Required] long id)
+        [SwaggerResponse(200, Type = typeof(List<CategoryResponse>))]
+        public async Task<ActionResult<List<CategoryResponse>>> GetAllCategories()
         {
-
-            if (id <= 0)
-            {
-                return BadRequest("Category ID must be a positive integer");
-            }
-
-            try
-            {
-                var category = await _context.Categories.FindAsync(id);
-
-                if (category == null)
-                {
-                    return NotFound("Category not found");
-                }
-
-                var response = new CategoryResponse
-                {
-                    CategoryId = category.ID,
-                    Name = category.Name
-                };
-
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpGet("list")]
-        [SwaggerResponse(200, Type = typeof(CategoryResponse))]
-        public async Task<IActionResult> GetAllCategories()
-        {
-            try
-            {
                 var response = await _context.Categories
                     .Select(c => new CategoryResponse
                     {
@@ -118,76 +81,55 @@ namespace LibraryManagementAPI.Controllers
                     .ToListAsync();
 
                 return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
         }
 
-        [HttpPatch]
-        [SwaggerResponse(200, Type = typeof(CategoryResponse))]
-        public async Task<IActionResult> UpdateCategory([FromQuery, Required] long id, [FromBody, Required] CategoryRequest request)
+        [HttpPut("{id}")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> UpdateCategory(short id, [FromBody, Required] CategoryRequest request)
         {
+            // initial DTO validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             if (id <= 0)
-            {
                 return BadRequest("Category ID must be a positive integer");
-            }
 
-            try
+            var category = await _context.Categories.FindAsync(id);
+
+            if (category == null)
+                return NotFound("Category not found");
+
+            if (_context.Categories.Any(c => c.Name == request.Name && c.ID != id))
             {
-                var category = await _context.Categories.FindAsync(id);
-
-                if (category == null)
-                    return NotFound("Category not found");
-
-                category.Name = request.Name;
-                _context.Categories.Update(category);
-                await _context.SaveChangesAsync();
-
-                var response = new CategoryResponse
-                {
-                    CategoryId = category.ID,
-                    Name = category.Name
-                };
-
-                return Ok(response);
+                ModelState.AddModelError("Name", $"Category with name '{request.Name}' already exists");
+                return BadRequest(ModelState);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+
+            category.Name = request.Name;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
-        [HttpDelete]
-        [SwaggerResponse(200, Type = typeof(string))]
-        public async Task<IActionResult> DeleteCategory([FromQuery] long id)
+
+        [HttpDelete("{id}")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> DeleteCategory(short id)
         {
             if (id <= 0)
                 return BadRequest("Category ID must be a positive integer");
 
-            try
-            {
-                var category = await _context.Categories.FindAsync(id);
+            var category = await _context.Categories.FindAsync(id);
 
-                if (category == null)
-                    return NotFound("Category not found");
+            if (category == null)
+                return NotFound("Category not found");
 
-                CategoryResponse categoryDeleted = new CategoryResponse
-                {
-                    CategoryId = category.ID,
-                    Name = category.Name
-                };
+            _context.Categories.Remove(category);
+            await _context.SaveChangesAsync();
 
-                _context.Categories.Remove(category);
-                await _context.SaveChangesAsync();
-
-                return Ok($"Category '{categoryDeleted.Name}' was deleted");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+            return NoContent();
         }
+
     }
 }
+

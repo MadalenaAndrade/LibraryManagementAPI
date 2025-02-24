@@ -17,7 +17,7 @@ namespace EFCoreClasses.Models
         public long SerialNumber { get; set; }
 
         [Required, MaxLength(255)]
-        public required string Title { get; set; }
+        public string Title { get; set; }
 
         [Required]
         public short Year { get; set; }
@@ -27,12 +27,12 @@ namespace EFCoreClasses.Models
 
         [ForeignKey("Publisher")]
         public int PublisherID { get; set; }
-        public virtual required Publisher Publisher { get; set; }
+        public virtual Publisher Publisher { get; set; }
 
 
         public virtual ICollection<BookAuthor> BookAuthors { get; set; } = new List<BookAuthor>(); // Navigation Property
         public virtual ICollection<BookCategory> BookCategories { get; set; } = new List<BookCategory>(); // Navigation Property
-        public virtual required BookStock BookStock { get; set; } // Navigation Property
+        public virtual BookStock BookStock { get; set; } // Navigation Property
         public virtual ICollection<BookCopy> BookCopies { get; set; } = new List<BookCopy>(); // Navigation Property
     }
 }

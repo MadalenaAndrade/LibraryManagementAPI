@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -15,7 +16,7 @@ namespace EFCoreClasses.Models
         public short ID { get; set; }
 
         [Required, MaxLength(10)]
-        public required string Condition { get; set; }
+        public string Condition { get; set; }
 
         [Required, Column(TypeName = "decimal(3,2)")]
         public decimal FineModifier { get; set; }

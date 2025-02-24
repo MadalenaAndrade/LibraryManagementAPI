@@ -14,7 +14,9 @@ namespace LibraryManagementAPI.DTOs
 
     public class CategoryResponse
     {
+        [Required]
         public short CategoryId { get; set; }
+        [Required]
         public string Name { get; set; }
     }
 }
