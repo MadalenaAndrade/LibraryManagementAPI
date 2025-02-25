@@ -75,87 +75,54 @@ namespace LibraryManagementAPI.DTOs
 
     public class UpdateBookAuthorRequest
     {
-        public string? OldAuthorName { get; set; }
+        [Required(ErrorMessage = "Old author name is required")]
+        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
+        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s\.\-']+)$", ErrorMessage = "Name contains invalid characters or forbidden words")]
+        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
+        public string OldAuthorName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "New author name is required")]
+        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
+        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s\.\-']+)$", ErrorMessage = "Name contains invalid characters or forbidden words")]
+        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
         public string NewAuthorName { get; set; }
     }
 
     public class UpdateBookCategoryRequest
     {
-        public string? OldCategoryName { get; set; }
+        [Required(ErrorMessage = "Old category name is required")]
+        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
+        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s]+)$", ErrorMessage = "Category name contains invalid characters or forbidden words")]
+        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
+        public string OldCategoryName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "New category name is required")]
+        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
+        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s]+)$", ErrorMessage = "Category name contains invalid characters or forbidden words")]
+        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
         public string NewCategoryName { get; set; }
     }
 
-
-
-    // responses
-    public class BaseBookResponse
+    // response
+    public class BookResponse
     {
         [Required]
-        [JsonPropertyOrder(1)]
         public long SerialNumber { get; set; }
-
         [Required]
-        [JsonPropertyOrder(2)]
         public string Title { get; set; }
-
         [Required]
-        [JsonPropertyOrder(3)]
         public short Year { get; set; }
-    }
-
-    public class BookResponse : BaseBookResponse
-    {
         [Required]
-        [JsonPropertyOrder(4)]
         public decimal FinePerDay { get; set; }
-
         [Required]
-        [JsonPropertyOrder(5)]
         public string PublisherName { get; set; }
-
         [Required]
-        [JsonPropertyOrder(6)]
         public List<string> AuthorName { get; set; }
-
         [Required]
-        [JsonPropertyOrder(7)]
         public List<string> CategoryName { get; set; }
-
         [Required]
-        [JsonPropertyOrder(8)]
         public short TotalAmount { get; set; }
-
         [Required]
-        [JsonPropertyOrder(9)]
         public short AvailableAmount { get; set; }
-    }
-
-    public class UpdateBookResponse : BaseBookResponse
-    {
-        [Required]
-        [JsonPropertyOrder(4)]
-        public decimal FinePerDay { get; set; }
-
-        [Required]
-        [JsonPropertyOrder(5)]
-        public string PublisherName { get; set; }
-    }
-
-    public class UpdateBookAuthorResponse : BaseBookResponse
-    {
-        [Required]
-        [JsonPropertyOrder(4)]
-        public List<string> AuthorNames { get; set; }
-    }
-
-    public class UpdateBookCategoryResponse : BaseBookResponse
-    {
-        [Required]
-        [JsonPropertyOrder(4)]
-        public List<string> CategoryNames { get; set; }
-    }
+    }   
 }

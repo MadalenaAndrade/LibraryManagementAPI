@@ -124,6 +124,12 @@ namespace LibraryManagementAPI.Controllers
             if (category == null)
                 return NotFound("Category not found");
 
+            // Check if there are categories associated to the author
+            var isCategoryLinkedToBooks = await _context.BookCategories.AnyAsync(ba => ba.CategoryID == id);
+
+            if (isCategoryLinkedToBooks)
+                return BadRequest("Category cannot be deleted because there is at least one relationship to a book.");
+
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
 

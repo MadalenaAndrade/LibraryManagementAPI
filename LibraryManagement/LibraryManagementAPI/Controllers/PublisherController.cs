@@ -129,10 +129,13 @@ namespace LibraryManagementAPI.Controllers
             if (id <= 0)
                 return BadRequest("Publisher ID must be a positive integer");
 
-            var publisher = await _context.Publishers.FindAsync(id);
+            var publisher = await _context.Publishers.Include(p => p.Books).FirstOrDefaultAsync(p => p.ID == id);
 
             if (publisher == null)
                 return NotFound("Publisher not found");
+
+            if (publisher.Books.Any()) //if there are books associated to the publisher, it returns an error
+                return BadRequest("Cannot delete publisher because there are books associated with it");
 
             _context.Publishers.Remove(publisher);
             await _context.SaveChangesAsync();

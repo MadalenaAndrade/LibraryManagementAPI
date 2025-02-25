@@ -92,9 +92,9 @@ namespace LibraryManagementAPI.Controllers
             return CreatedAtAction(nameof(GetBooks), new { serialNumber = newBook.SerialNumber }, null);
         }
 
-        [HttpPost("{serialNumber}/authors")]
+        [HttpPost("{serialNumber}/author")]
         [SwaggerResponse(201)]
-        public async Task<ActionResult> AddAuthorsToBook(long serialNumber, [FromBody, Required] List<AuthorRequest> request)
+        public async Task<ActionResult> AddAuthorsToBook(long serialNumber, [FromBody, Required] AuthorRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -105,88 +105,88 @@ namespace LibraryManagementAPI.Controllers
             if (book == null)
                 return NotFound($"Book with serial number '{serialNumber}' not found");
 
+            // get author in db
+            var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name == request.Name);
 
-            // Verifies if authors and relationships exists or needs to be created.
-            var newAuthors = new List<Author>();
-            var newBookAuthors = new List<BookAuthor>();
-
-            foreach (var authorRequest in request)
+            // if author doesn't exist it creates a new one
+            if (author == null)
             {
-                var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name == authorRequest.Name);
-
-                if (author == null)
-                {
-                    newAuthors.Add(new Author { Name = authorRequest.Name });
-                }
-
-                if (!_context.BookAuthors.Any(ba => ba.SerialNumber == serialNumber && ba.AuthorID == author.ID))
-                {
-                    newBookAuthors.Add(new BookAuthor
-                    {
-                        SerialNumber = serialNumber,
-                        AuthorID = author.ID
-                    });
-                }
+                author = new Author { Name = request.Name };
+                _context.Authors.Add(author);
+                await _context.SaveChangesAsync(); //saves to create author id 
             }
-            
-            if (newAuthors.Any())
-                _context.Authors.AddRange(newAuthors);
 
-            if (newBookAuthors.Any())
-                _context.BookAuthors.AddRange(newBookAuthors);
+            // check if relationship between book and author already exists, if it exist returns bad request
+            var existingRelation = await _context.BookAuthors.AnyAsync(ba => ba.SerialNumber == serialNumber && ba.AuthorID == author.ID);
 
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetBooks), new { serialNumber = book.SerialNumber}, null);
-        }
-
-        [HttpPost("{serialNumber}/categories")]
-        [SwaggerResponse(201)]
-        public async Task<ActionResult> AddCategoriesToBook(long serialNumber, [FromBody, Required] List<CategoryRequest> request)
-        {
-            if (!ModelState.IsValid)
+            if (existingRelation)
+            {
+                ModelState.AddModelError("Authors", $"Author '{request.Name}' is already associated with this book.");
                 return BadRequest(ModelState);
-
-            // Verifies if serialNumber exists
-            var book = await _context.Books.FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
-
-            if (book == null)
-                return NotFound($"Book with serial number '{serialNumber}' not found");
-
-
-            // Verifies if categories and relationships exists or needs to be created.
-            var newCategories = new List<Category>();
-            var newBookCategories = new List<BookCategory>();
-
-            foreach (var categoryRequest in request)
-            {
-                var category = await _context.Categories.FirstOrDefaultAsync(a => a.Name == categoryRequest.Name);
-
-                if (category == null)
-                {
-                    newCategories.Add(new Category { Name = categoryRequest.Name });
-                }
-
-                if (!_context.BookCategories.Any(ba => ba.SerialNumber == serialNumber && ba.CategoryID == category.ID))
-                {
-                    newBookCategories.Add(new BookCategory
-                    {
-                        SerialNumber = serialNumber,
-                        CategoryID = category.ID
-                    });
-                }
             }
 
-            if (newCategories.Any())
-                _context.Categories.AddRange(newCategories);
+            // if relationship doesn't exist it adds a new BookAuthor
+            var bookAuthor = new BookAuthor
+            {
+                SerialNumber = serialNumber,
+                AuthorID = author.ID
+            };
 
-            if (newBookCategories.Any())
-                _context.BookCategories.AddRange(newBookCategories);
-
+            _context.BookAuthors.AddRange(bookAuthor);
             await _context.SaveChangesAsync();
+
 
             return CreatedAtAction(nameof(GetBooks), new { serialNumber = book.SerialNumber }, null);
         }
+
+        [HttpPost("{serialNumber}/category")]
+        [SwaggerResponse(201)]
+        public async Task<ActionResult> AddCategoriesToBook(long serialNumber, [FromBody, Required] CategoryRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Verifies if serialNumber exists
+            var book = await _context.Books.FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+            if (book == null)
+                return NotFound($"Book with serial number '{serialNumber}' not found");
+
+
+            // get category in db
+            var category = await _context.Categories.FirstOrDefaultAsync(a => a.Name == request.Name);
+
+            // if category doesn't exist it creates a new one
+            if (category == null)
+            {
+                category = new Category { Name = request.Name };
+                _context.Categories.Add(category);
+                await _context.SaveChangesAsync(); //saves to create category id 
+            }
+
+            // check if relationship between book and category already exists, if it exist returns bad request
+            var existingRelation = await _context.BookCategories.AnyAsync(ba => ba.SerialNumber == serialNumber && ba.CategoryID == category.ID);
+
+            if (existingRelation)
+            {
+                ModelState.AddModelError("Categories", $"Category '{request.Name}' is already associated with this book.");
+                return BadRequest(ModelState);
+            }
+
+            // if relationship doesn't exist it adds a new BookCategory
+            var bookCategory = new BookCategory
+            {
+                SerialNumber = serialNumber,
+                CategoryID = category.ID
+            };
+
+            _context.BookCategories.AddRange(bookCategory);
+            await _context.SaveChangesAsync();
+
+
+            return CreatedAtAction(nameof(GetBooks), new { serialNumber = book.SerialNumber }, null);
+        }
+
 
 
         [HttpGet("filter")]
@@ -210,9 +210,7 @@ namespace LibraryManagementAPI.Controllers
                                                && (filter.Year == null || b.Year == filter.Year)
                                                && (filter.Publisher == null || b.Publisher.Name.Contains(filter.Publisher))
                                                && (filter.Author == null || b.BookAuthors.Any(ba => ba.Author.Name.Contains(filter.Author)))
-                                               && (filter.Category == null || b.BookCategories.Any(bc => bc.Category.Name.Contains(filter.Category)))
-                                             );
-                                       
+                                               && (filter.Category == null || b.BookCategories.Any(bc => bc.Category.Name.Contains(filter.Category))));       
           
             var books = await query.ToListAsync();
 
@@ -234,413 +232,351 @@ namespace LibraryManagementAPI.Controllers
 
             return Ok(response);
         }
-        
+
 
         [HttpGet]
-        [SwaggerResponse(200, Type = typeof(BookResponse))]
-        public async Task<IActionResult> GetAllBooks()
+        [SwaggerResponse(200, Type = typeof(List<BookResponse>))]
+        public async Task<ActionResult<BookResponse>> GetAllBooks()
         {
-            try
-            {
-                var response = await _context.Books
-                    .Select(b => new BookResponse
-                    {
-                        SerialNumber = b.SerialNumber,
-                        Title = b.Title,
-                        Year = b.Year,
-                        FinePerDay = b.FinePerDay,
-                        PublisherName = b.Publisher.Name,
-                        AuthorName = b.BookAuthors.Select(ba => ba.Author.Name).ToList(),
-                        CategoryName = b.BookCategories.Select(bc => bc.Category.Name).ToList(),
-                        TotalAmount = b.BookStock.TotalAmount,
-                        AvailableAmount = b.BookStock.AvailableAmount
-                    })
-                    .ToListAsync();
+            var response = await _context.Books
+                .Select(b => new BookResponse
+                {
+                    SerialNumber = b.SerialNumber,
+                    Title = b.Title,
+                    Year = b.Year,
+                    FinePerDay = b.FinePerDay,
+                    PublisherName = b.Publisher.Name,
+                    AuthorName = b.BookAuthors.Select(ba => ba.Author.Name).ToList(),
+                    CategoryName = b.BookCategories.Select(bc => bc.Category.Name).ToList(),
+                    TotalAmount = b.BookStock.TotalAmount,
+                    AvailableAmount = b.BookStock.AvailableAmount
+                })
+                .ToListAsync();
 
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+            return Ok(response);
         }
 
-        [HttpPatch("details")]
-        [SwaggerResponse(200, Type = typeof(UpdateBookResponse))]
-        public async Task<IActionResult> UpdateBook([FromQuery, Required] long serialNumber, [FromBody] UpdateBookRequest request)
+
+
+        [HttpPut("{serialNumber}")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> UpdateBook(long serialNumber, [FromBody] UpdateBookRequest request)
         {
+            // validation
             if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
             {
                 return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
             }
 
-            if (request.Title == null && request.Year == null && request.FinePerDay == null && request.Publisher == null)
-            {
+            if (request == null)
                 return BadRequest("Request body cannot be empty, provide a field to change (Title, Year, Fine per year, Publisher.");
-            }
 
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            //update logic
+            var book = await _context.Books.Include(b => b.Publisher)
+                                           .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+            if (book == null)
+                return NotFound($"Book with Serial Number '{serialNumber}' not found.");
+           
+
+            if (request.Title != null)
+                book.Title = request.Title;
+            
+
+            if (request.Year.HasValue)
+                book.Year = request.Year.Value;
+
+            if (request.FinePerDay.HasValue)
+                book.FinePerDay = request.FinePerDay.Value;
+            
+
+            // check first if new publisher exists on Publisher, if not it creates
+            if (request.Publisher != null && book.Publisher.Name != request.Publisher)
             {
-                //include Authors, Categories and BookStock for response
-                var book = await _context.Books.Include(b => b.Publisher)
-                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+                var existingPublisher = await _context.Publishers.FirstOrDefaultAsync(p => p.Name == request.Publisher);
 
-                if (book == null)
+                if (existingPublisher == null)
                 {
-                    return NotFound($"Book with Serial Number '{serialNumber}' not found.");
+                    existingPublisher = new Publisher { Name = request.Publisher };
+                    _context.Publishers.Add(existingPublisher);
+                    await _context.SaveChangesAsync();
                 }
 
-                if (request.Title != null)
-                {
-                    if (book.Title == request.Title)
-                    {
-                        return BadRequest("The title provided is the same as the current one");
-                    }
-                    book.Title = request.Title;
-                }
-
-                if (request.Year.HasValue)
-                {
-                    if (book.Year == request.Year)
-                    {
-                        return BadRequest("The year provided is the same as the current one");
-                    }
-                    book.Year = request.Year.Value;
-                }
-
-                if (request.FinePerDay.HasValue)
-                {
-                    if (book.FinePerDay == request.FinePerDay)
-                    {
-                        return BadRequest("The fine per day provided is the same as the current one");
-                    }
-                    book.FinePerDay = request.FinePerDay.Value;
-                }
-
-                // check first if new publisher exists on Publisher, if not it creates
-                if (request.Publisher != null)
-                {
-                    var existingPublisher = await _context.Publishers.FirstOrDefaultAsync(p => p.Name == request.Publisher);
-
-                    if (book.Publisher.Name == existingPublisher.Name)
-                    {
-                        return BadRequest("The publisher name provided is the same as the current one");
-                    }
-
-                    if (existingPublisher == null)
-                    {
-                        existingPublisher = new Publisher { Name = request.Publisher };
-                        _context.Publishers.Add(existingPublisher);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    book.PublisherID = existingPublisher.ID;
-                }
-
-                _context.Books.Update(book);
-                await _context.SaveChangesAsync();
-
-                var response = new UpdateBookResponse
-                {
-                    SerialNumber = book.SerialNumber,
-                    Title = book.Title,
-                    Year = book.Year,
-                    FinePerDay = book.FinePerDay,
-                    PublisherName = book.Publisher.Name
-                };
-                return Ok(response);
+                book.PublisherID = existingPublisher.ID;
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
-        [HttpPatch("author")]
-        [SwaggerResponse(200, Type = typeof(UpdateBookAuthorResponse))]
-        public async Task<IActionResult> UpdateBookAuthor([FromQuery, Required] long serialNumber, [FromBody, Required] UpdateBookAuthorRequest request)
+        [HttpPut("{serialNumber}/author")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> UpdateBookAuthor(long serialNumber, [FromBody, Required] UpdateBookAuthorRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
+            {
+                return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits.");
+            }
+
+
+            // check if book exists
+            var book = await _context.Books.Include(b => b.BookAuthors)
+                                           .ThenInclude(ba => ba.Author)
+                                           .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+            if (book == null)
+                return NotFound($"Book with Serial Number '{serialNumber}' not found.");
+
+
+            // check if old author exists
+            var oldAuthor = await _context.Authors.FirstOrDefaultAsync(a => a.Name.ToLower() == request.OldAuthorName.ToLower().Trim());
+
+            if (oldAuthor == null)
+                return NotFound($"Author '{request.OldAuthorName}' not found.");
+
+            // check if old author is the same as new author
+            if (request.OldAuthorName == request.NewAuthorName)
+            {
+                ModelState.AddModelError("NewAuthorName", "The new author cannot be the same as the old author.");
+                return BadRequest(ModelState);
+            }
+
+            // checks if new author exists, add it if not
+            var newAuthor = await _context.Authors.FirstOrDefaultAsync(a => a.Name.ToLower() == request.NewAuthorName.ToLower().Trim());
+
+            if (newAuthor == null)
+            {
+                newAuthor = new Author { Name = request.NewAuthorName };
+                _context.Authors.Add(newAuthor);
+                await _context.SaveChangesAsync();
+            }
+
+            // Check if BookAuthor relationship exists
+            var existingBookAuthor = await _context.BookAuthors.AnyAsync(ba => ba.SerialNumber == book.SerialNumber && ba.AuthorID == oldAuthor.ID);
+
+            if (!existingBookAuthor)
+                return BadRequest($"Author '{request.OldAuthorName}' is not associated with this book.");
+
+            // check if new author is already associated with the book
+            var isNewAuthorAlreadyAssociated = await _context.BookAuthors.AnyAsync(ba => ba.SerialNumber == serialNumber && ba.AuthorID == newAuthor.ID);
+
+            if (isNewAuthorAlreadyAssociated)
+            {
+                ModelState.AddModelError("NewAuthorName", $"The author '{request.NewAuthorName}' is already associated with this book.");
+                return BadRequest(ModelState);
+            }
+
+            // Remove old relationship
+            var relationToRemove = await _context.BookAuthors.FirstOrDefaultAsync(ba => ba.SerialNumber == serialNumber && ba.AuthorID == oldAuthor.ID);
+
+            _context.BookAuthors.Remove(relationToRemove);
+
+            // Adds new relationship
+            var bookAuthor = new BookAuthor
+            {
+                SerialNumber = serialNumber,
+                AuthorID = newAuthor.ID
+            };
+            _context.BookAuthors.Add(bookAuthor);
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPut("{serialNumber}/category")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> UpdateBookCategory(long serialNumber, [FromBody, Required] UpdateBookCategoryRequest request)
         {
             if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
             {
                 return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits.");
             }
 
-            if (request.OldAuthorName.ToLower().Trim() == request.NewAuthorName.ToLower().Trim())
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // check if book exists
+            var book = await _context.Books.Include(b => b.BookCategories)
+                                           .ThenInclude(ba => ba.Category)
+                                           .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+            if (book == null)
+                return NotFound($"Book with Serial Number '{serialNumber}' not found.");
+
+
+            // check if old category exists
+            var oldCategory = await _context.Categories.FirstOrDefaultAsync(a => a.Name.ToLower() == request.OldCategoryName.ToLower().Trim());
+
+            if (oldCategory == null)
+                return NotFound($"Category '{request.OldCategoryName}' not found.");
+
+            // check if old category is the same as new author
+            if (request.OldCategoryName == request.NewCategoryName)
             {
-                return BadRequest("The new author's name must be different from the current author's name.");
+                ModelState.AddModelError("NewCategoryName", "The new category cannot be the same as the old category.");
+                return BadRequest(ModelState);
             }
 
-            try
+            // checks if new category exists, add it if not
+            var newCategory = await _context.Categories.FirstOrDefaultAsync(a => a.Name.ToLower() == request.NewCategoryName.ToLower().Trim());
+
+            if (newCategory == null)
             {
-                var book = await _context.Books.Include(b => b.BookAuthors)
-                                               .ThenInclude(ba => ba.Author)
-                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
-
-                if (book == null)
-                {
-                    return NotFound($"Book with Serial Number '{serialNumber}' not found.");
-                }
-
-                // checks if new author exists, add it to table if not
-                var newAuthor = await _context.Authors.FirstOrDefaultAsync(p => p.Name.ToLower() == request.NewAuthorName.ToLower().Trim());
-                
-                if (newAuthor == null)
-                {
-                    newAuthor = new Author { Name = request.NewAuthorName };
-                    _context.Authors.Add(newAuthor);
-                    await _context.SaveChangesAsync();
-                }
-
-                // check if old author exists
-                var bookAuthor = book.BookAuthors.FirstOrDefault(ba => ba.Author.Name.ToLower() == request.OldAuthorName.ToLower().Trim());
-
-                if (bookAuthor != null)
-                {
-                    // If it exists, detach the entity to prevent multiple tracking issues
-                    _context.Entry(bookAuthor).State = EntityState.Detached;
-
-                    // remove old author relationship to avoid key conflits, as it will be later substituted by new author
-                    _context.BookAuthors.Remove(bookAuthor);
-                    await _context.SaveChangesAsync();
-                }
-
-                // Ensure EF is not tracking an existing BookAuthor instance
-                var existingBookAuthor = await _context.BookAuthors.FirstOrDefaultAsync(ba => ba.SerialNumber == book.SerialNumber && ba.AuthorID == newAuthor.ID);
-
-                if (existingBookAuthor == null)
-                {
-                    // add new BookAuthor relationship
-                    var newBookAuthor = new BookAuthor
-                    {
-                        SerialNumber = book.SerialNumber,
-                        AuthorID = newAuthor.ID
-                    };
-                    _context.BookAuthors.Add(newBookAuthor);
-
-                    await _context.SaveChangesAsync();
-                }
-
-                var response = new UpdateBookAuthorResponse
-                {
-                    SerialNumber = book.SerialNumber,
-                    Title = book.Title,
-                    Year = book.Year,
-                    AuthorNames = book.BookAuthors.Select(ba => ba.Author.Name).ToList()
-                };
-                return Ok(response);
+                newCategory = new Category { Name = request.NewCategoryName };
+                _context.Categories.Add(newCategory);
+                await _context.SaveChangesAsync();
             }
-            catch (Exception ex)
+
+            // Check if BookCategory relationship exists
+            var existingBookCategory = await _context.BookCategories.AnyAsync(ba => ba.SerialNumber == book.SerialNumber && ba.CategoryID == oldCategory.ID);
+
+            if (!existingBookCategory)
+                return BadRequest($"Category '{request.OldCategoryName}' is not associated with this book.");
+
+            // check if new category is already associated with the book
+            var isNewCategoryAlreadyAssociated = await _context.BookCategories.AnyAsync(ba => ba.SerialNumber == serialNumber && ba.CategoryID == newCategory.ID);
+
+            if (isNewCategoryAlreadyAssociated)
             {
-                return StatusCode(500, ex.Message);
+                ModelState.AddModelError("NewCategoryName", $"The category '{request.NewCategoryName}' is already associated with this book.");
+                return BadRequest(ModelState);
             }
+
+            // Remove old relationship
+            var relationToRemove = await _context.BookCategories.FirstOrDefaultAsync(ba => ba.SerialNumber == serialNumber && ba.CategoryID == oldCategory.ID);
+
+            _context.BookCategories.Remove(relationToRemove);
+
+            // Adds new relationship
+            var bookCategory = new BookCategory
+            {
+                SerialNumber = serialNumber,
+                CategoryID = newCategory.ID
+            };
+            _context.BookCategories.Add(bookCategory);
+
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
-        [HttpPatch("category")]
-        [SwaggerResponse(200, Type = typeof(UpdateBookCategoryResponse))]
-        public async Task<IActionResult> UpdateBookCategory([FromQuery, Required] long serialNumber, [FromBody, Required] UpdateBookCategoryRequest request)
-        {
-            if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
-            {
-                return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits.");
-            }
 
-            if (request.OldCategoryName.ToLower().Trim() == request.NewCategoryName.ToLower().Trim())
-            {
-                return BadRequest("The new author's name must be different from the current author's name.");
-            }
 
-            try
-            {
-                var book = await _context.Books.Include(b => b.BookCategories)
-                                               .ThenInclude(bc => bc.Category)
-                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
 
-                if (book == null)
-                {
-                    return NotFound($"Book with Serial Number '{serialNumber}' not found.");
-                }
-
-                // checks if new category exists, add it to table if not
-                var newCategory = await _context.Categories.FirstOrDefaultAsync(p => p.Name.ToLower() == request.NewCategoryName.ToLower().Trim());
-
-                if (newCategory == null)
-                {
-                    newCategory = new Category { Name = request.NewCategoryName };
-                    _context.Categories.Add(newCategory);
-                    await _context.SaveChangesAsync();
-                }
-
-                // check if old category exists
-                var bookCategory = book.BookCategories.FirstOrDefault(ba => ba.Category.Name.ToLower() == request.OldCategoryName.ToLower().Trim());
-
-                if (bookCategory != null)
-                {
-                    // Detach the entity to prevent multiple tracking issues ----- not sure if I should do something like this, as I am quite "forcing" the relationship
-                    _context.Entry(bookCategory).State = EntityState.Detached;
-
-                    // remove old category relationship to avoid key conflits
-                    _context.BookCategories.Remove(bookCategory);
-                    await _context.SaveChangesAsync();
-                }
-
-                // Ensure EF is not tracking an existing BookCategory instance
-                var existingBookCategory = await _context.BookCategories.FirstOrDefaultAsync(ba => ba.SerialNumber == book.SerialNumber && ba.CategoryID == newCategory.ID);
-
-                if (existingBookCategory == null)
-                {
-                    // add new BookCategory relationship
-                    var newBookCategory = new BookCategory
-                    {
-                        SerialNumber = book.SerialNumber,
-                        CategoryID = newCategory.ID
-                    };
-                    _context.BookCategories.Add(newBookCategory);
-
-                    await _context.SaveChangesAsync();
-                }
-
-                var response = new UpdateBookCategoryResponse
-                {
-                    SerialNumber = book.SerialNumber,
-                    Title = book.Title,
-                    Year = book.Year,
-                    CategoryNames = book.BookCategories.Select(ba => ba.Category.Name).ToList()
-                };
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpDelete]
-        [SwaggerResponse(200, Type = typeof(string))]
-        public async Task<IActionResult> DeleteBook([FromQuery, Required] long serialNumber)
+        [HttpDelete("{serialNumber}")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> DeleteBook(long serialNumber)
         {
             if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
             {
                 return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
             }
 
-            try
+            // check if book exists
+            var book = await _context.Books.Include(b => b.BookStock)
+                                           .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+            if (book == null)
             {
-                // check if book exists
-                var book = await _context.Books.Include(b => b.BookStock)
-                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
-
-                if (book == null)
-                {
-                    return NotFound($"No book serial number {serialNumber} was found in the database");
-                }
-
-                // ensure book is not being rented
-                if (book.BookStock.AvailableAmount < book.BookStock.TotalAmount)
-                {
-                    return BadRequest($"There are books {book.Title} being rented");
-                }
-
-                _context.Books.Remove(book);
-                await _context.SaveChangesAsync();
-                return Ok($"Book '{book.Title}' deleted sucessfully");
-
+                return NotFound($"No book serial number {serialNumber} was found in the database");
             }
-            catch (Exception ex)
+
+            // ensure book is not being rented
+            if (book.BookStock.AvailableAmount < book.BookStock.TotalAmount)
             {
-                return StatusCode(500, ex.Message);
+                return BadRequest($"There are books {book.Title} being rented");
             }
+
+            _context.Books.Remove(book);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
-        [HttpDelete("author")]
-        [SwaggerResponse(200, Type = typeof(string))]
-        public async Task<IActionResult> DeleteBookAuthor([FromQuery, Required] long serialNumber, [FromBody, Required] string authorName)
+        [HttpDelete("{serialNumber}/author")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> DeleteBookAuthor(long serialNumber, [FromBody, Required] AuthorRequest authorName)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
+                return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
+            
+
+            // check if book exists and related author exists
+            var book = await _context.Books.Include(b => b.BookAuthors)
+                                           .ThenInclude(b => b.Author)
+                                           .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+            if (book == null)
+                return NotFound($"No book serial number {serialNumber} was found in the database");
+            
+
+            var bookAuthor = book.BookAuthors.FirstOrDefault(ba => ba.Author.Name == authorName.Name);
+
+            if (bookAuthor == null)
+                return NotFound($"No author named '{authorName.Name}' was found for this book.");
+            
+
+            //check how many authors the book has, if only one it can't be deleted
+            if (book.BookAuthors.Count() < 2)
+                return BadRequest("The book only has one author. Please update it instead of deleting.");
+            
+
+            // delete bookAuthor entry
+            _context.BookAuthors.Remove(bookAuthor);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
+        [HttpDelete("{serialNumber}/category")]
+        [SwaggerResponse(204)]
+        public async Task<IActionResult> DeleteBookCategory(long serialNumber, [FromBody, Required] CategoryRequest categoryName)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
             {
                 return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
             }
 
-            try
+            // check if book exists and related category exists
+            var book = await _context.Books.Include(b => b.BookCategories)
+                                           .ThenInclude(b => b.Category)
+                                           .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
+
+            if (book == null)
             {
-                // check if book exists and related author exists
-                var book = await _context.Books.Include(b => b.BookAuthors)
-                                               .ThenInclude(b => b.Author)
-                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
-
-                if (book == null)
-                {
-                    return NotFound($"No book serial number {serialNumber} was found in the database");
-                }
-
-                var bookAuthor = book.BookAuthors.FirstOrDefault(ba => ba.Author.Name == authorName);
-
-                if (bookAuthor == null)
-                {
-                    return NotFound($"No author named '{authorName}' was found for this book.");
-                }
-
-                //check how many authors the book has, if only one it can't be deleted
-                if (book.BookAuthors.Count() < 2)
-                { 
-                    return BadRequest("The book only has one author. Please update it instead of deleting.");
-                }
-
-                // delete bookAuthor entry
-                _context.BookAuthors.Remove(bookAuthor);
-                await _context.SaveChangesAsync();
-
-                return Ok($"Author '{authorName}' was successfully removed from book '{book.Title}'.");
+                return NotFound($"No book serial number {serialNumber} was found in the database");
             }
-            catch (Exception ex)
+
+            var bookCategory = book.BookCategories.FirstOrDefault(ba => ba.Category.Name == categoryName.Name);
+
+            if (bookCategory == null)
             {
-                return StatusCode(500, ex.Message);
+                return NotFound($"No category named '{categoryName.Name}' was found for this book.");
             }
+
+            //check how many categories the book has, if only one it can't be deleted
+            if (book.BookCategories.Count() < 2)
+            {
+                return BadRequest("The book only has one category. Please update it instead of deleting.");
+            }
+
+            // delete bookCategory entry
+            _context.BookCategories.Remove(bookCategory);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
-
-        [HttpDelete("category")]
-        [SwaggerResponse(200, Type = typeof(string))]
-        public async Task<IActionResult> DeleteBookCategory([FromQuery, Required] long serialNumber, [FromBody, Required] string categoryName)
-        {
-            if (serialNumber <= 0 || serialNumber.ToString().Length != 13)
-            {
-                return BadRequest("SerialNumber must be a positive integer and have exactly 13 digits");
-            }
-
-            try
-            {
-                // check if book exists and related category exists
-                var book = await _context.Books.Include(b => b.BookCategories)
-                                               .ThenInclude(b => b.Category)
-                                               .FirstOrDefaultAsync(b => b.SerialNumber == serialNumber);
-
-                if (book == null)
-                {
-                    return NotFound($"No book serial number {serialNumber} was found in the database");
-                }
-
-                var bookCategory = book.BookCategories.FirstOrDefault(ba => ba.Category.Name == categoryName);
-
-                if (bookCategory == null)
-                {
-                    return NotFound($"No category named '{categoryName}' was found for this book.");
-                }
-
-                //check how many categories the book has, if only one it can't be deleted
-                if (book.BookCategories.Count() < 2)
-                {
-                    return BadRequest("The book only has one category. Please update it instead of deleting.");
-                }
-
-                // delete bookCategory entry
-                _context.BookCategories.Remove(bookCategory);
-                await _context.SaveChangesAsync();
-
-                return Ok($"Category '{categoryName}' was successfully removed from book '{book.Title}'.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-    }
+    }  
 }

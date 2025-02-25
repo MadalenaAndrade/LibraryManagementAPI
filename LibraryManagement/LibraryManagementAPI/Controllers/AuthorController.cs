@@ -122,6 +122,12 @@ namespace LibraryManagementAPI.Controllers
             if (author == null)
                 return NotFound("Author not found");
 
+            // Check if there are books associated to the author
+            var isAuthorLinkedToBooks = await _context.BookAuthors.AnyAsync(ba => ba.AuthorID == id);
+
+            if (isAuthorLinkedToBooks)
+                return BadRequest("Author cannot be deleted because there is at least one relationship to a book.");
+
             _context.Authors.Remove(author);
             await _context.SaveChangesAsync();
 
