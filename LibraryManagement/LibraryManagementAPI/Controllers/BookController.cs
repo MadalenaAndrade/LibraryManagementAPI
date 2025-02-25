@@ -191,9 +191,9 @@ namespace LibraryManagementAPI.Controllers
 
         [HttpGet("filter")]
         [SwaggerResponse(200, Type = typeof(List<BookResponse>))]
-        public async Task<ActionResult<List<BookResponse>>> GetBooks([FromQuery] GetBookRequest filter)
+        public async Task<ActionResult<List<BookResponse>>> GetBooks([FromQuery, Required] GetBookRequest filter)
         {
-            if (filter == null)
+            if (filter.SerialNumber == null && filter.Title == null && filter.Year == null && filter.Publisher == null && filter.Author == null && filter.Category == null)
             {
                 return BadRequest("At least one filter (Serial Number, Title, Year, Publisher, Author, or Category) must be provided.");
             }

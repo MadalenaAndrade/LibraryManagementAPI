@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryManagementAPI.DTOs
 {
-    public class BookCopyRequest
+    public class CreateBookCopyRequest
     {
         [Required(ErrorMessage = "Book serial number is required")]
         [NumberValidation(1, 13, ErrorMessage = "Serial Number must be positive and have exactly 13 digits")]
@@ -11,10 +11,6 @@ namespace LibraryManagementAPI.DTOs
 
         [RegularExpression("^(?i)(As new|Good|Bad|Used)$", ErrorMessage = "BookCondition must be one of the following: 'As new', 'Good', 'Bad', 'Used'")]
         public string? BookCondition { get; set; }
-
-        [Required(ErrorMessage = "The amount of bookcopies is required")]
-        [Range(1, 10, ErrorMessage = "Total amount of books must be between 1 and 10")]
-        public short Amount { get; set; }
 
         public string? Notes { get; set; }
     }
@@ -45,18 +41,6 @@ namespace LibraryManagementAPI.DTOs
     public class BookCopyResponse
     {
         [Required]
-        public long SerialNumber { get; set; }
-        [Required]
-        public string BookCondition { get; set; }
-        [Required]
-        public short Amount { get; set; }
-        [Required]
-        public string Notes { get; set; }
-    }
-
-    public class GetBookCopyResponse
-    {
-        [Required]
         public int Id { get; set; }
         [Required]
         public long SerialNumber { get; set; }
@@ -66,5 +50,17 @@ namespace LibraryManagementAPI.DTOs
         public string BookCondition { get; set; }
         [Required]
         public string Notes { get; set; }
+    }
+
+    public class PaginatedBookCopyResponse
+    {
+        [Required]
+        public int TotalBookCopies { get; set; }
+        [Required]
+        public int CurrentPage { get; set; }
+        [Required]
+        public int PageSize { get; set; }
+        [Required]
+        public List<BookCopyResponse> BookCopies { get; set; }
     }
 }
