@@ -11,7 +11,7 @@ using System.Globalization;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("Client")]
+    [Route("Clients")]
     public class ClientController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -22,174 +22,149 @@ namespace LibraryManagementAPI.Controllers
         }
 
         [HttpPost]
-        [SwaggerResponse(200, Type = typeof(ClientResponse))]
-        public async Task<IActionResult> CreateClient([FromBody, Required] CreateClientRequest client)
+        [SwaggerResponse(201)]
+        public async Task<ActionResult> CreateClient([FromBody, Required] CreateClientRequest client)
         {
-            
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var nifInDb = await _context.Clients.FirstOrDefaultAsync(c => c.NIF == client.NIF);
+
+            if (nifInDb != null)
             {
-                var nifInDb = await _context.Clients.FirstOrDefaultAsync(c => c.NIF == client.NIF);
-
-                if (nifInDb != null)
-                {
-                    return BadRequest($"A client with the NIF {client.NIF} already exists");
-                }
-
-                string[] validFormats = { "dd-MM-yyyy", "dd/MM/yyyy" };
-                DateTime parsedDate = DateTime.ParseExact(client.DateOfBirth, validFormats, CultureInfo.InvariantCulture, DateTimeStyles.None);
-                DateOnly clientDate = DateOnly.FromDateTime(parsedDate);
-
-                var newClient = new Client
-                {
-                    Name = client.Name,
-                    DateOfBirth = clientDate,
-                    NIF = client.NIF,
-                    Contact = client.Contact,
-                    Address = client.Address
-                };
-
-                _context.Clients.Add(newClient);
-                await _context.SaveChangesAsync();
-
-                var response = new ClientResponse
-                {
-                    Id = newClient.ID,
-                    Name = newClient.Name,
-                    DateOfBirth = newClient.DateOfBirth,
-                    NIF = newClient.NIF,
-                    Contact = newClient.Contact,
-                    Address = newClient.Address
-                };
-
-                return Ok(response);
+                ModelState.AddModelError("NIF", $"A client with the NIF {client.NIF} already exists");
+                return BadRequest(ModelState);
             }
-            catch (Exception ex)
+
+            string[] validFormats = { "dd-MM-yyyy", "dd/MM/yyyy" };
+            DateTime parsedDate = DateTime.ParseExact(client.DateOfBirth, validFormats, CultureInfo.InvariantCulture, DateTimeStyles.None);
+            DateOnly clientDate = DateOnly.FromDateTime(parsedDate);
+
+            var newClient = new Client
             {
-                return StatusCode(500, ex.Message);
-            }
+                Name = client.Name,
+                DateOfBirth = clientDate,
+                NIF = client.NIF,
+                Contact = client.Contact,
+                Address = client.Address
+            };
+
+            _context.Clients.Add(newClient);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetClients), new { id = newClient.ID }, null);
         }
 
-        [HttpGet]
-        [SwaggerResponse(200, Type = typeof(ClientResponse))]
-        public async Task<IActionResult> CreateClient([FromQuery, Required] GetClientRequest filter)
+        [HttpGet("filter")]
+        [SwaggerResponse(200, Type = typeof(List<ClientResponse>))]
+        public async Task<ActionResult<List<ClientResponse>>> GetClients([FromQuery, Required] GetClientRequest filter)
         {
             if (filter.Id == null && filter.Name == null && filter.NIF == null)
             {
                 return BadRequest("At least one filter (Id, Name, NIF) must be provided.");
             }
 
-            try
+
+            var query = _context.Clients.Where(c => (filter.Id == null || c.ID == filter.Id)
+                                                 && (filter.Name == null || c.Name.ToLower().Contains(filter.Name.ToLower().Trim()))
+                                                 && (filter.NIF == null || c.NIF == filter.NIF))
+                                        .Select(c => new ClientResponse
+                                        {
+                                            Id = c.ID,
+                                            Name = c.Name,
+                                            DateOfBirth = c.DateOfBirth,
+                                            NIF = c.NIF,
+                                            Contact = c.Contact,
+                                            Address = c.Address
+                                        });
+
+            var result = await query.ToListAsync();
+
+            if (result == null || !result.Any())
             {
-                var query = _context.Clients.Where(c => (filter.Id == null || c.ID == filter.Id)
-                                                     && (filter.Name == null || c.Name.ToLower().Contains(filter.Name.ToLower().Trim()))
-                                                     && (filter.NIF == null || c.NIF == filter.NIF))
-                                            .Select(c => new ClientResponse
-                                              {
-                                                  Id = c.ID,
-                                                  Name = c.Name,
-                                                  DateOfBirth = c.DateOfBirth,
-                                                  NIF = c.NIF,
-                                                  Contact = c.Contact,
-                                                  Address = c.Address
-                                              });
+                return NotFound("No clients found matching the given filters.");
+            }
 
-                var result = await query.ToListAsync();
+            return Ok(result);
+        }
 
-                if (result == null || !result.Any())
+        [HttpGet]
+        [SwaggerResponse(200, Type = typeof(List<ClientResponse>))]
+        public async Task<ActionResult<List<ClientResponse>>> GetAllClients()
+        {
+
+            var response = await _context.Clients
+                .Select(c => new ClientResponse
                 {
-                    return NotFound("No clients found matching the given filters.");
-                }
+                    Id = c.ID,
+                    Name = c.Name,
+                    DateOfBirth = c.DateOfBirth,
+                    NIF = c.NIF,
+                    Contact = c.Contact,
+                    Address = c.Address
+                })
+                .ToListAsync();
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+            return Ok(response);
         }
 
-        [HttpGet("list")]
-        [SwaggerResponse(200, Type = typeof(ClientResponse))]
-        public async Task<IActionResult> GetAllClients()
-        {
-            try
-            {
-                var response = await _context.Clients
-                    .Select(c => new ClientResponse
-                    {
-                        Id = c.ID,
-                        Name = c.Name,
-                        DateOfBirth = c.DateOfBirth,
-                        NIF = c.NIF,
-                        Contact = c.Contact,
-                        Address = c.Address
-                    })
-                    .ToListAsync();
 
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        [HttpPatch]
-        [SwaggerResponse(200, Type = typeof(ClientResponse))]
-        public async Task<IActionResult> UpdateClient([FromQuery, Required] GetClientRequest filter, [FromBody, Required] UpdateClientRequest request)
+        [HttpPut("{id}")]
+        [SwaggerResponse(204)]
+        public async Task<IActionResult> UpdateClient(int id, [FromBody, Required] UpdateClientRequest request)
         {
-            if (filter.Id == null && filter.NIF == null)
-            {
-                return BadRequest("A Client Id or NIF must be provided.");
-            }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (id < 1)
+                return BadRequest("Id must be positive");
 
             if (request.Contact == null && request.Address == null)
             {
                 return BadRequest("At least one of 'Contact' or 'Address' must be provided.");
             }
 
-            try
+            var client = await _context.Clients.FindAsync(id);
+
+            if (client == null)
+                return NotFound("Client not found.");
+
+            if (request.Contact.HasValue)
             {
-                var client = await _context.Clients.FirstOrDefaultAsync(c => (filter.Id == null || c.ID == filter.Id)
-                                                     && (filter.Name == null || c.Name.ToLower().Contains(filter.Name.ToLower().Trim()))
-                                                     && (filter.NIF == null || c.NIF == filter.NIF));
-                    
-
-                if (client == null)
-                {
-                    return NotFound("No client was found matching the given filters.");
-                }
-
-                if (request.Contact.HasValue)
-                {
-                    client.Contact = request.Contact.Value;
-                }
-
-                if (request.Address != null)
-                {
-                    client.Address = request.Address;
-                }
-
-                await _context.SaveChangesAsync();
-
-                var result = new ClientResponse
-                {
-                    Id = client.ID,
-                    Name = client.Name,
-                    DateOfBirth = client.DateOfBirth,
-                    NIF = client.NIF,
-                    Contact = client.Contact,
-                    Address = client.Address
-                };
-
-                return Ok(result);
+                client.Contact = request.Contact.Value;
             }
-            catch (Exception ex)
+
+            if (request.Address != null)
             {
-                return StatusCode(500, ex.Message);
+                client.Address = request.Address;
             }
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
-        // ToDo Delete request, considering clients without debts
+        [HttpDelete("{id}")]
+        [SwaggerResponse(204)]
+        public async Task<ActionResult> DeleteClient(int id)
+        {
+            if (id < 1)
+                return BadRequest("Id must be positive");
+
+            var client = await _context.Clients.Include(c => c.Rents)
+                                               .FirstOrDefaultAsync(c => c.ID == id);
+
+            if (client == null)
+                return NotFound("Client not found.");
+
+            // only delete if client has never rented
+            if (client.Rents.Any())
+                return BadRequest("Cannot delete a client that has rented a book previously");
+
+            _context.Clients.Remove(client);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }

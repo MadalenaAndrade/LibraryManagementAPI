@@ -5,11 +5,6 @@ namespace LibraryManagementAPI.DTOs
 {
     public class RentRequest
     {
-        [NumberValidation(1, ErrorMessage = "Id must be positive")]
-        public int? ClientId { get; set; }
-
-        public int? ClientNIF { get; set; }
-
         [NumberValidation(1, 13, ErrorMessage = "Serial Number must be positive and have exactly 13 digits")]
         public long? BookSerialNumber { get; set; }
 

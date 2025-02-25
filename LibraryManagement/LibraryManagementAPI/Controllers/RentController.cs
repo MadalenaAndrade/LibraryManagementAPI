@@ -11,7 +11,7 @@ using System.Globalization;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("Rent")]
+    [Route("Rents")]
     public class RentController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -22,22 +22,19 @@ namespace LibraryManagementAPI.Controllers
         }
 
 
-        [HttpPost]
-        [SwaggerResponse(200, Type = typeof(RentResponse))]
-        public async Task<IActionResult> CreateRent([FromBody, Required] RentRequest request)
+        [HttpPost("clientId")]
+        [SwaggerResponse(201)]
+        public async Task<IActionResult> CreateRent(int clientId, [FromBody, Required] RentRequest request)
         {
-            if (request.ClientId == null && request.ClientNIF == null)
-            {
-                return BadRequest("A Client Id or NIF must be provided.");
-            }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (clientId <= 0)
+                return BadRequest("Client ID must be a positive integer");
 
             if (request.BookSerialNumber == null && request.BookCopyId == null)
-            {
                 return BadRequest("A book serial number or book copy ID must be provided");
-            }
 
-            try
-            {
                 // check if book exists and is available
                 var book = await _context.BookCopies.Include(bc => bc.Book)
                                                         .ThenInclude(bc => bc.BookStock)
@@ -48,15 +45,12 @@ namespace LibraryManagementAPI.Controllers
                                                     .FirstOrDefaultAsync();
 
                 if (book == null)
-                {
                     return NotFound("Book not found");
-                }
+
 
                 // check overall availability
-                if (book.Book.BookStock.AvailableAmount < 1)
-                {
+                if (book.Book.BookStock.AvailableAmount <= 0)
                     return BadRequest("There's no book in stock at the moment");
-                }
 
 
                 // if bookcopy was introduced, check it's availability
@@ -84,9 +78,7 @@ namespace LibraryManagementAPI.Controllers
                 }
 
                 // with the book being available check if client exists
-                var client = await _context.Clients.Where(c => (request.ClientId == null || c.ID == request.ClientId)
-                                                            && (request.ClientNIF == null || c.NIF == request.ClientNIF))
-                                                   .FirstOrDefaultAsync();
+                var client = await _context.Clients.FirstOrDefaultAsync(c => c.ID == clientId);
 
                 if (client == null)
                 {
@@ -134,67 +126,77 @@ namespace LibraryManagementAPI.Controllers
 
                 await _context.SaveChangesAsync();
 
-                var response = new RentResponse
-                {
-                    ClientId = client.ID,
-                    ClientName = client.Name,
-                    BookCopyId = bookCopyId,
-                    SerialNumber = book.SerialNumber,
-                    BookTitle = book.Book.Title,
-                    StartDate = rent.StartDate,
-                    DueDate = rent.DueDate
-                };
 
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+                return CreatedAtAction(nameof(GetRentByID), new { id = rent.ID }, null);
         }
 
-        [HttpGet]
+        [HttpGet("{id}")]
         [SwaggerResponse(200, Type = typeof(RentResponse))]
-        public async Task<IActionResult> GetAllRents(int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult<AuthorResponse>> GetRentByID(long id)
+        {
+
+            if (id <= 0)
+                return BadRequest("Rent ID must be a positive integer");
+
+            var rent = await _context.Rents.Include(r => r.Client)
+                                           .Include(r => r.BookCopy)
+                                            .ThenInclude(bc => bc.Book)
+                                           .FirstOrDefaultAsync(r => r.ID == id);
+
+            if (rent == null)
+                return NotFound("Rent not found");
+
+            var response = new RentResponse
+            {
+                ClientId = rent.ClientID,
+                ClientName = rent.Client.Name,
+                BookCopyId = rent.BookCopyID,
+                SerialNumber = rent.BookCopy.SerialNumber,
+                BookTitle = rent.BookCopy.Book.Title,
+                StartDate = rent.StartDate,
+                DueDate = rent.DueDate
+            };
+
+            return Ok(response);
+        }
+
+
+        [HttpGet]
+        [SwaggerResponse(200, Type = typeof(List<RentResponse>))]
+        public async Task<ActionResult<List<RentResponse>>> GetAllRents(int pageNumber = 1, int pageSize = 10)
         {
             if (pageNumber <= 0 || pageSize <= 0)
                 return BadRequest("Page number and page size must be greater than 0.");
 
-            try
+
+            var query = _context.Rents.Select(r => new RentResponse
             {
-                var query = _context.Rents.Select(r => new RentResponse
-                {
-                    ClientId = r.ClientID,
-                    ClientName = r.Client.Name,
-                    BookCopyId = r.BookCopyID,
-                    SerialNumber = r.BookCopy.SerialNumber,
-                    BookTitle = r.BookCopy.Book.Title,
-                    StartDate = r.StartDate,
-                    DueDate = r.DueDate
-                });
+                ClientId = r.ClientID,
+                ClientName = r.Client.Name,
+                BookCopyId = r.BookCopyID,
+                SerialNumber = r.BookCopy.SerialNumber,
+                BookTitle = r.BookCopy.Book.Title,
+                StartDate = r.StartDate,
+                DueDate = r.DueDate
+            });
 
-                // Calculate the quantity of itens 
-                var totalRents = await query.AsNoTracking().CountAsync();
+            // Calculate the quantity of itens 
+            var totalRents = await query.AsNoTracking().CountAsync();
 
-                var rents = await query.AsNoTracking()
-                                       .Skip((pageNumber - 1) * pageSize)
-                                       .Take(pageSize)
-                                       .ToListAsync();
+            var rents = await query.AsNoTracking()
+                                   .Skip((pageNumber - 1) * pageSize)
+                                   .Take(pageSize)
+                                   .ToListAsync();
 
-                var response = new
-                {
-                    TotalRents = totalRents,
-                    CurrentPage = pageNumber,
-                    PageSize = pageSize,
-                    Rents = rents
-                };
-
-                return Ok(response);
-            }
-            catch (Exception ex)
+            var response = new
             {
-                return StatusCode(500, ex.Message);
-            }
+                TotalRents = totalRents,
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                Rents = rents
+            };
+
+            return Ok(response);
         }
 
     }
