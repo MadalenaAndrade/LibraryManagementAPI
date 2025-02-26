@@ -15,6 +15,16 @@ namespace LibraryManagementAPI.DTOs
         public string? StartDate { get; set; }
     }
 
+    public class RentReceptionRequest
+    {
+        [DateValidation("dd-MM-yyyy || dd/MM/yyyy", ErrorMessage = "Date must be valid and in the dd-MM-yyyy or dd/MM/yyyy format")]
+        public string? ReturnDate { get; set; }
+
+        [Required]
+        [RegularExpression("^(?i)(As new|Good|Bad|Used)$", ErrorMessage = "BookCondition must be one of the following: 'As new', 'Good', 'Bad', 'Used'")]
+        public string ReceivedCondition { get; set; }
+    }
+
     public class RentResponse
     {
         [Required]
@@ -31,5 +41,17 @@ namespace LibraryManagementAPI.DTOs
         public DateTime StartDate { get; set; }
         [Required]
         public DateTime DueDate { get; set; }
+    }
+
+    public class RentReceptionResponse
+    {
+        [Required]
+        public long RentId { get; set; }
+        [Required]
+        public DateTime ReturnDate { get; set; }
+        [Required]
+        public string ReceivedCondition { get; set; }
+        [Required]
+        public decimal TotalFine { get; set; }
     }
 }
