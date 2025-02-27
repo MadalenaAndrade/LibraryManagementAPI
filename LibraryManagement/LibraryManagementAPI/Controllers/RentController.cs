@@ -32,7 +32,12 @@ namespace LibraryManagementAPI.Controllers
                 return BadRequest("Client ID must be a positive integer");
 
             if (request.BookSerialNumber == null && request.BookCopyId == null)
-                return BadRequest("A book serial number or book copy ID must be provided");
+            {
+                ModelState.AddModelError("BookSerialNumber", "A book serial number or book copy ID must be provided");
+                ModelState.AddModelError("BookCopyId", "A book serial number or book copy ID must be provided");
+                return BadRequest(ModelState);
+            }
+                
 
             // check if book exists and is available
             var book = await _context.BookCopies.Include(bc => bc.Book)
@@ -49,8 +54,11 @@ namespace LibraryManagementAPI.Controllers
 
             // check overall availability
             if (book.Book.BookStock.AvailableAmount <= 0)
-                return BadRequest("There's no book in stock at the moment");
-
+            {
+                ModelState.AddModelError("AvailableAmount", "There's no book in stock at the moment");
+                return BadRequest(ModelState);
+            }
+         
 
             // if bookcopy was introduced, check it's availability
             int bookCopyId;
@@ -61,7 +69,8 @@ namespace LibraryManagementAPI.Controllers
 
                 if (isRented)
                 {
-                    return BadRequest("Book copy is already rented");
+                    ModelState.AddModelError("BookCopyId", "Book copy is already rented");
+                    return BadRequest(ModelState);
                 }
                 bookCopyId = request.BookCopyId.Value;
             }
@@ -90,7 +99,8 @@ namespace LibraryManagementAPI.Controllers
 
             if (hasActiveRent)
             {
-                return BadRequest("Client already has a rented book that hasn't been returned");
+                ModelState.AddModelError("ClientID", "Client already has a rented book that hasn't been returned");
+                return BadRequest(ModelState);
             }
 
             // being data validated, add rent
@@ -137,7 +147,7 @@ namespace LibraryManagementAPI.Controllers
                 return BadRequest(ModelState);
 
             if (rentId <= 0)
-                return BadRequest("Rent ID must be a positive integer");
+                return BadRequest("RentId must be a positive integer");
 
 
             // Check is rent Id exists and if book was not already delivered
@@ -151,7 +161,11 @@ namespace LibraryManagementAPI.Controllers
                 return NotFound("No rented book was found");
 
             if (rent.RentReception != null)
-                return BadRequest("This rent has already been closed");
+            {
+                ModelState.AddModelError("RentReception", "This rent has already been closed");
+                return BadRequest(ModelState);
+            }
+                
 
             // Check if return Date has been inputed, if it has been, it is converts to DateTime, if not the default value of "now" is given
             // and validates date introduced
@@ -164,7 +178,11 @@ namespace LibraryManagementAPI.Controllers
                 returnedDate = DateTime.Now;
 
             if (returnedDate < rent.StartDate)
-                return BadRequest("Return date cannot be before the rental start date.");
+            {
+                ModelState.AddModelError("ReturnDate", "Return date cannot be before the rental start date.");
+                return BadRequest(ModelState);
+            }
+                
 
 
             // Calculate TotalFine depending on the condition received
@@ -172,8 +190,10 @@ namespace LibraryManagementAPI.Controllers
             var originalBookCondition = await _context.BookConditions.FirstOrDefaultAsync(bc => bc.ID == rent.BookCopy.BookConditionID);
 
             if (receivedBookCondition.ID < originalBookCondition.ID)
-                return BadRequest("The book cannot be returned in a better condition than it was rented.");
-
+            {
+                ModelState.AddModelError("ReceivedCondition", "The book cannot be returned in a better condition than it was rented.");
+                return BadRequest(ModelState);
+            }
 
             decimal totalFine = 0;
 
@@ -340,6 +360,5 @@ namespace LibraryManagementAPI.Controllers
 
             return Ok(response);
         }
-
     }
 }

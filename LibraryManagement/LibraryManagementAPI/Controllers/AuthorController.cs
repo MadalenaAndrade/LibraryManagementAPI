@@ -25,8 +25,7 @@ namespace LibraryManagementAPI.Controllers
         public async Task<ActionResult> CreateAuthors([FromBody, Required] AuthorRequest author)
         {
             // verifies first the validation of the DTO
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            
 
             if (_context.Authors.Any(a => a.Name == author.Name))
             {
