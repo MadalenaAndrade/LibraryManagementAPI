@@ -10,7 +10,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("Publishers")]
+    [Route("Publisher")]
     public class PublisherController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -50,11 +50,6 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(PublisherResponse))]
         public async Task<ActionResult<PublisherResponse>> GetPublisherByID(int id)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Publisher ID must be a positive integer");
-            }
-
             var publisher = await _context.Publishers.FindAsync(id);
 
             if (publisher == null)
@@ -72,11 +67,10 @@ namespace LibraryManagementAPI.Controllers
         }
 
 
-        [HttpGet]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(List<PublisherResponse>))]
         public async Task<ActionResult<List<PublisherResponse>>> GetAllPublishers()
         {
-
             var response = await _context.Publishers
                 .Select(p => new PublisherResponse
                 {
@@ -86,18 +80,12 @@ namespace LibraryManagementAPI.Controllers
                 .ToListAsync();
 
             return Ok(response);
-
         }
 
         [HttpPut("{id}")]
         [SwaggerResponse(204)]
         public async Task<ActionResult> UpdatePublisher(int id, [FromBody, Required] PublisherRequest request)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Publisher ID must be a positive integer");
-            }
-
             var publisher = await _context.Publishers.FindAsync(id);
 
             if (publisher == null)
@@ -112,12 +100,6 @@ namespace LibraryManagementAPI.Controllers
             publisher.Name = request.Name;
             await _context.SaveChangesAsync();
 
-            var response = new PublisherResponse
-            {
-                PublisherId = publisher.ID,
-                Name = publisher.Name
-            };
-
             return NoContent();
         }
 
@@ -126,9 +108,6 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> DeletePublisher(int id)
         {
-            if (id <= 0)
-                return BadRequest("Publisher ID must be a positive integer");
-
             var publisher = await _context.Publishers.Include(p => p.Books).FirstOrDefaultAsync(p => p.ID == id);
 
             if (publisher == null)
@@ -142,7 +121,6 @@ namespace LibraryManagementAPI.Controllers
 
             return NoContent();
         }
-
     }
 }
 

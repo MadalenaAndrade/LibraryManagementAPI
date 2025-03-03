@@ -12,7 +12,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("Categories")]
+    [Route("Category")]
     public class CategoryController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -51,9 +51,6 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(CategoryResponse))]
         public async Task<ActionResult<CategoryResponse>> GetCategoryByID(short id)
         {
-            if (id <= 0)
-                return BadRequest("Category ID must be a positive integer");
-
             var category = await _context.Categories.FindAsync(id);
 
             if (category == null)
@@ -68,7 +65,7 @@ namespace LibraryManagementAPI.Controllers
             return Ok(response);
         }
 
-        [HttpGet]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(List<CategoryResponse>))]
         public async Task<ActionResult<List<CategoryResponse>>> GetAllCategories()
         {
@@ -87,18 +84,16 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> UpdateCategory(short id, [FromBody, Required] CategoryRequest request)
         {
-            // initial DTO validation
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (id <= 0)
-                return BadRequest("Category ID must be a positive integer");
-
             var category = await _context.Categories.FindAsync(id);
 
             if (category == null)
                 return NotFound("Category not found");
 
+            // initial DTO validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+           
             if (_context.Categories.Any(c => c.Name == request.Name && c.ID != id))
             {
                 ModelState.AddModelError("Name", $"Category with name '{request.Name}' already exists");
@@ -116,9 +111,6 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> DeleteCategory(short id)
         {
-            if (id <= 0)
-                return BadRequest("Category ID must be a positive integer");
-
             var category = await _context.Categories.FindAsync(id);
 
             if (category == null)

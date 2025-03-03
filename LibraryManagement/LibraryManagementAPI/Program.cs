@@ -18,11 +18,10 @@ namespace LibraryManagementAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            var connectionString = builder.Configuration.GetConnectionString("LibraryHubDatabase")
-                ?? throw new InvalidOperationException("connection string" + "'LibraryHubDatabase' not found.");
+            var connectionString = builder.Configuration.GetConnectionString("LibraryHubDatabase");
 
             builder.Services.AddDbContext<LibraryDbContext>(options =>
-                options.UseSqlServer(connectionString));
+                options.UseSqlServer(connectionString)); // Use the connection string from appsettings.json or default from DbContext
 
 
             var app = builder.Build();

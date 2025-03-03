@@ -10,7 +10,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("Authors")]
+    [Route("Author")]
     public class AuthorController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -24,8 +24,9 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(201)]
         public async Task<ActionResult> CreateAuthors([FromBody, Required] AuthorRequest author)
         {
-            // verifies first the validation of the DTO
-            
+            // initial dto validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
             if (_context.Authors.Any(a => a.Name == author.Name))
             {
@@ -48,10 +49,6 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(AuthorResponse))]
         public async Task<ActionResult<AuthorResponse>> GetAuthorByID(long id)
         {
-
-            if (id <= 0)
-                return BadRequest("Author ID must be a positive integer");
-
             var author = await _context.Authors.FindAsync(id);
 
             if (author == null)
@@ -66,7 +63,7 @@ namespace LibraryManagementAPI.Controllers
             return Ok(response);
         }
 
-        [HttpGet]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(List<AuthorResponse>))]
         public async Task<ActionResult<List<AuthorResponse>>> GetAllAuthors()
         {
@@ -85,18 +82,15 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> UpdateAuthor(long id, [FromBody, Required] AuthorRequest request)
         {
-            // initial dto validation
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-            
-            if (id <= 0)
-                return BadRequest("Author ID must be a positive integer");
-            
             var author = await _context.Authors.FindAsync(id);
 
             if (author == null)
                 return NotFound("Author not found");
 
+            // initial dto validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            
             if (_context.Authors.Any(a => a.Name == request.Name && a.ID != id))
             {
                 ModelState.AddModelError("Name", $"Author with name '{request.Name}' already exists");
@@ -113,9 +107,6 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> DeleteAuthor(long id)
         {
-            if (id <= 0)
-                return BadRequest($"Author ID must be a positive integer");
-
             var author = await _context.Authors.FindAsync(id);
 
             if (author == null)
