@@ -34,6 +34,12 @@ namespace LibraryManagementAPI.DTOs
         [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
         public string PublisherName { get; set; }
 
+        [RequiredList(ErrorMessage = "At least one author is required.")]
+        public List<AuthorRequest> Authors { get; set; }
+
+        [RequiredList(ErrorMessage = "At least one category is required.")]
+        public List<CategoryRequest> Categories { get; set; } 
+
         [Required(ErrorMessage = "The total amount of books is required")]
         [Range(1, 50, ErrorMessage = "Total amount of books must be between 1 and 50")]
         public short TotalAmount { get; set; }
@@ -57,6 +63,7 @@ namespace LibraryManagementAPI.DTOs
     public class UpdateBookRequest
     {
         [SwaggerSchema(Description = "New book title (optional)")]
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "Title name must be between 1 and 255 characters")]
         public string? Title { get; set; }
 
         [SwaggerSchema(Description = "New book year (optional)")]
@@ -71,37 +78,14 @@ namespace LibraryManagementAPI.DTOs
         [StringLength(30, MinimumLength = 1, ErrorMessage = "Publisher name must be between 1 and 30 characters")]
         [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s\.\-]+)$", ErrorMessage = "Publisher name contains invalid characters or forbidden words")]
         public string? Publisher { get; set; }
+
+        [SwaggerSchema(Description = "List of authors (optional)")]
+        public List<AuthorRequest>? Authors { get; set; }
+
+        [SwaggerSchema(Description = "List of categories(optional)")]
+        public List<AuthorRequest>? Categories { get; set; }
     }
 
-    public class UpdateBookAuthorRequest
-    {
-        [Required(ErrorMessage = "Old author name is required")]
-        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
-        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s\.\-']+)$", ErrorMessage = "Name contains invalid characters or forbidden words")]
-        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
-        public string OldAuthorName { get; set; }
-
-        [Required(ErrorMessage = "New author name is required")]
-        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
-        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s\.\-']+)$", ErrorMessage = "Name contains invalid characters or forbidden words")]
-        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
-        public string NewAuthorName { get; set; }
-    }
-
-    public class UpdateBookCategoryRequest
-    {
-        [Required(ErrorMessage = "Old category name is required")]
-        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
-        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s]+)$", ErrorMessage = "Category name contains invalid characters or forbidden words")]
-        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
-        public string OldCategoryName { get; set; }
-
-        [Required(ErrorMessage = "New category name is required")]
-        [StringLength(30, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 30 characters")]
-        [RegularExpression(@"^(?!.*\b(?i)(drop|delete|insert|update|select|alter|table)\b)([\p{L}\s]+)$", ErrorMessage = "Category name contains invalid characters or forbidden words")]
-        [DefaultNameNotAllowed("string", ErrorMessage = "Please enter a specific name")]
-        public string NewCategoryName { get; set; }
-    }
 
     // response
     public class BookResponse

@@ -166,5 +166,16 @@ namespace LibraryManagementAPI.DTOs
 
             }
         }
+
+        public class RequiredListAttribute : ValidationAttribute
+        {
+            public override bool IsValid(object value)
+            {
+                if (value == null || value is ICollection<object> collection && collection.Count == 0)
+                    return false;
+
+                return true;
+            }
+        }
     }
 }

@@ -11,7 +11,7 @@ using System.Globalization;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("Rents")]
+    [Route("Rent")]
     public class RentController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -25,26 +25,23 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(201)]
         public async Task<ActionResult> CreateRent(int clientId, [FromBody, Required] RentRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            //FromRoute validation
+            var client = await _context.Clients.FirstOrDefaultAsync(c => c.ID == clientId);
 
-            if (clientId <= 0)
-                return BadRequest("Client ID must be a positive integer");
+            if (client == null)
+                return NotFound("Client information not found. Please create a client file.");
 
+            
+            // POST logic, check if book exists
             if (request.BookSerialNumber == null && request.BookCopyId == null)
             {
                 ModelState.AddModelError("BookSerialNumber", "A book serial number or book copy ID must be provided");
                 ModelState.AddModelError("BookCopyId", "A book serial number or book copy ID must be provided");
-                return BadRequest(ModelState);
+                return BadRequest(ModelState); //adds to dto validation
             }
-                
 
             // check if book exists and is available
-            var book = await _context.BookCopies.Include(bc => bc.Book)
-                                                    .ThenInclude(bc => bc.BookStock)
-                                                .Include(bc => bc.Rents)
-                                                    .ThenInclude(bc => bc.RentReception)
-                                                .Where(bc => (request.BookSerialNumber == null || bc.SerialNumber == request.BookSerialNumber)
+            var book = await _context.BookCopies.Where(bc => (request.BookSerialNumber == null || bc.SerialNumber == request.BookSerialNumber)
                                                    && (request.BookCopyId == null || bc.ID == request.BookCopyId))
                                                 .FirstOrDefaultAsync();
 
@@ -58,8 +55,7 @@ namespace LibraryManagementAPI.Controllers
                 ModelState.AddModelError("AvailableAmount", "There's no book in stock at the moment");
                 return BadRequest(ModelState);
             }
-         
-
+        
             // if bookcopy was introduced, check it's availability
             int bookCopyId;
 
@@ -77,20 +73,10 @@ namespace LibraryManagementAPI.Controllers
             // if user didn't specify bookCopy choose one not being rented
             else
             {
-                var availableBookCopy = await _context.BookCopies.Include(bc => bc.Rents)
-                                                                    .ThenInclude(bc => bc.RentReception)
-                                                                 .Where(bc => bc.SerialNumber == book.SerialNumber)
+                var availableBookCopy = await _context.BookCopies.Where(bc => bc.SerialNumber == book.SerialNumber)
                                                                  .Where(bc => !bc.Rents.Any(r => r.RentReception == null)) //exclude rented copies
                                                                  .FirstOrDefaultAsync();
                 bookCopyId = availableBookCopy.ID;
-            }
-
-            // with the book being available check if client exists
-            var client = await _context.Clients.FirstOrDefaultAsync(c => c.ID == clientId);
-
-            if (client == null)
-            {
-                return NotFound("Client information not found. Please create a client file.");
             }
 
             // client can't rent new book if has another rented
@@ -127,14 +113,12 @@ namespace LibraryManagementAPI.Controllers
                     DueDate = startDate.AddDays(7)
                 };
             }
-
-            await _context.Rents.AddAsync(rent);
+           _context.Rents.Add(rent);
 
             // update available stock
             book.Book.BookStock.AvailableAmount--;
 
             await _context.SaveChangesAsync();
-
 
             return CreatedAtAction(nameof(GetRentByID), new { id = rent.ID }, null);
         }
@@ -143,23 +127,21 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(201)]
         public async Task<ActionResult> CreateRentReception(long rentId, [FromBody, Required] RentReceptionRequest request)
         {
+            // FromRoute validation
+            var rent = await _context.Rents.FirstOrDefaultAsync(r => r.ID == rentId);
+
+            if (rent == null)
+                return NotFound("No rented book was found");
+
+            // DTO validation
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             if (rentId <= 0)
                 return BadRequest("RentId must be a positive integer");
 
-
-            // Check is rent Id exists and if book was not already delivered
-            var rent = await _context.Rents.Include(r => r.RentReception)
-                                           .Include(r => r.BookCopy)
-                                            .ThenInclude(bc => bc.Book)
-                                                .ThenInclude(b => b.BookStock)
-                                           .FirstOrDefaultAsync(r => r.ID == rentId);
-
-            if (rent == null)
-                return NotFound("No rented book was found");
-
+            // POST logic
+            // check if book was not already delivered
             if (rent.RentReception != null)
             {
                 ModelState.AddModelError("RentReception", "This rent has already been closed");
@@ -183,8 +165,6 @@ namespace LibraryManagementAPI.Controllers
                 return BadRequest(ModelState);
             }
                 
-
-
             // Calculate TotalFine depending on the condition received
             var receivedBookCondition = await _context.BookConditions.FirstOrDefaultAsync(bc => bc.Condition.ToLower() == request.ReceivedCondition.ToLower().Trim());
             var originalBookCondition = await _context.BookConditions.FirstOrDefaultAsync(bc => bc.ID == rent.BookCopy.BookConditionID);
@@ -237,18 +217,13 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(RentResponse))]
         public async Task<ActionResult<RentResponse>> GetRentByID(long id)
         {
-
-            if (id <= 0)
-                return BadRequest("Rent ID must be a positive integer");
-
-            var rent = await _context.Rents.Include(r => r.Client)
-                                           .Include(r => r.BookCopy)
-                                            .ThenInclude(bc => bc.Book)
-                                           .FirstOrDefaultAsync(r => r.ID == id);
+            // FromRoute validation
+            var rent = await _context.Rents.FirstOrDefaultAsync(r => r.ID == id);
 
             if (rent == null)
                 return NotFound("Rent not found");
 
+            // GET logic
             var response = new RentResponse
             {
                 ClientId = rent.ClientID,
@@ -267,16 +242,13 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(RentReceptionResponse))]
         public async Task<ActionResult<RentReceptionResponse>> GetRentReceptionByID(long rentId)
         {
-
-            if (rentId <= 0)
-                return BadRequest("Rent ID must be a positive integer");
-
-            var rentReception = await _context.RentReceptions.Include(rr => rr.BookCondition)
-                                                             .FirstOrDefaultAsync(rr => rr.RentID == rentId);
+            // FromRoute validation
+            var rentReception = await _context.RentReceptions.FirstOrDefaultAsync(rr => rr.RentID == rentId);
 
             if (rentReception == null)
                 return NotFound("Rent reception not found");
 
+            // GET logic
             var response = new RentReceptionResponse
             {
                 RentId = rentReception.RentID,
@@ -288,14 +260,15 @@ namespace LibraryManagementAPI.Controllers
             return Ok(response);
         }
 
-        [HttpGet]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(List<RentResponse>))]
         public async Task<ActionResult<List<RentResponse>>> GetAllRents(int pageNumber = 1, int pageSize = 10)
         {
+            // FromQuery pagination validation
             if (pageNumber <= 0 || pageSize <= 0)
                 return BadRequest("Page number and page size must be greater than 0.");
 
-
+            // GET logic
             var query = _context.Rents.Select(r => new RentResponse
             {
                 ClientId = r.ClientID,
@@ -326,14 +299,15 @@ namespace LibraryManagementAPI.Controllers
             return Ok(response);
         }
 
-        [HttpGet("Receptions")]
+        [HttpGet("ReceptionsList")]
         [SwaggerResponse(200, Type = typeof(List<RentReceptionResponse>))]
         public async Task<ActionResult<List<RentResponse>>> GetAllRentReceptions(int pageNumber = 1, int pageSize = 10)
         {
+            // FromQuery pagination validation
             if (pageNumber <= 0 || pageSize <= 0)
                 return BadRequest("Page number and page size must be greater than 0.");
 
-
+            // GET logic
             var query = _context.RentReceptions.Select(rr => new RentReceptionResponse
             {
                 RentId = rr.RentID,

@@ -11,7 +11,7 @@ using System.Globalization;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("Clients")]
+    [Route("Client")]
     public class ClientController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -25,9 +25,11 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(201)]
         public async Task<ActionResult> CreateClient([FromBody, Required] CreateClientRequest client)
         {
+            // DTO validation
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // POST logic
             var nifInDb = await _context.Clients.FirstOrDefaultAsync(c => c.NIF == client.NIF);
 
             if (nifInDb != null)
@@ -59,13 +61,13 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(List<ClientResponse>))]
         public async Task<ActionResult<List<ClientResponse>>> GetClients([FromQuery, Required] GetClientRequest filter)
         {
+            // GET logic
             if (filter.Id == null && filter.Name == null && filter.NIF == null)
             {
                 return BadRequest("At least one filter (Id, Name, NIF) must be provided.");
             }
 
-
-            var query = _context.Clients.Where(c => (filter.Id == null || c.ID == filter.Id)
+            var clients = await _context.Clients.Where(c => (filter.Id == null || c.ID == filter.Id)
                                                  && (filter.Name == null || c.Name.ToLower().Contains(filter.Name.ToLower().Trim()))
                                                  && (filter.NIF == null || c.NIF == filter.NIF))
                                         .Select(c => new ClientResponse
@@ -76,24 +78,18 @@ namespace LibraryManagementAPI.Controllers
                                             NIF = c.NIF,
                                             Contact = c.Contact,
                                             Address = c.Address
-                                        });
+                                        })
+                                        .ToListAsync();
 
-            var result = await query.ToListAsync();
-
-            if (result == null || !result.Any())
-            {
-                return NotFound("No clients found matching the given filters.");
-            }
-
-            return Ok(result);
+            return Ok(clients);
         }
 
-        [HttpGet]
+        [HttpGet("list")]
         [SwaggerResponse(200, Type = typeof(List<ClientResponse>))]
         public async Task<ActionResult<List<ClientResponse>>> GetAllClients()
         {
-
-            var response = await _context.Clients
+            // GET logic
+            var clients = await _context.Clients
                 .Select(c => new ClientResponse
                 {
                     Id = c.ID,
@@ -105,7 +101,7 @@ namespace LibraryManagementAPI.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(response);
+            return Ok(clients);
         }
 
 
@@ -113,31 +109,25 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<IActionResult> UpdateClient(int id, [FromBody, Required] UpdateClientRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (id < 1)
-                return BadRequest("Id must be positive");
-
-            if (request.Contact == null && request.Address == null)
-            {
-                return BadRequest("At least one of 'Contact' or 'Address' must be provided.");
-            }
-
+            // FromRoute validation
             var client = await _context.Clients.FindAsync(id);
 
             if (client == null)
                 return NotFound("Client not found.");
 
+            // DTO validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // PUT logic
+            if (request == null)
+                return BadRequest("At least one of 'Contact' or 'Address' must be provided.");
+
             if (request.Contact.HasValue)
-            {
                 client.Contact = request.Contact.Value;
-            }
 
             if (request.Address != null)
-            {
                 client.Address = request.Address;
-            }
 
             await _context.SaveChangesAsync();
 
@@ -148,18 +138,16 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> DeleteClient(int id)
         {
-            if (id < 1)
-                return BadRequest("Id must be positive");
-
-            var client = await _context.Clients.Include(c => c.Rents)
-                                               .FirstOrDefaultAsync(c => c.ID == id);
+            // FromRoute validation
+            var client = await _context.Clients.FirstOrDefaultAsync(c => c.ID == id);
 
             if (client == null)
                 return NotFound("Client not found.");
 
+            // DELETE logic
             // only delete if client has never rented
             if (client.Rents.Any())
-                return BadRequest("Cannot delete a client that has rented a book previously");
+                return BadRequest("Cannot delete a client that has rented a book previously"); //409?
 
             _context.Clients.Remove(client);
             await _context.SaveChangesAsync();

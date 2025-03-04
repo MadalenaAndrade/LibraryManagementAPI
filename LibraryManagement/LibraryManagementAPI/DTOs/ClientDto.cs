@@ -42,6 +42,8 @@ namespace LibraryManagementAPI.DTOs
     {
         [NumberValidation(1, 9, ErrorMessage = "Contact number must be positive and have exactly 9 digits")]
         public int? Contact { get; set; }
+
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "Address must be between 1 and 255 characters")]
         public string? Address { get; set; }
     }
 

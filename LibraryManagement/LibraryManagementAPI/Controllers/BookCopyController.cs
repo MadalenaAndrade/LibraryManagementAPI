@@ -12,7 +12,7 @@ using System.ComponentModel.DataAnnotations;
 namespace LibraryManagementAPI.Controllers
 {
     [ApiController]
-    [Route("BookCopies")]
+    [Route("BookCopy")]
     public class BookCopyController : ControllerBase
     {
         private readonly LibraryDbContext _context;
@@ -26,23 +26,24 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(201)]
         public async Task<ActionResult> CreateBookCopy([FromBody, Required] CreateBookCopyRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var book = await _context.Books.Include(b => b.BookStock)
-                                           .FirstOrDefaultAsync(b => b.SerialNumber == request.SerialNumber);
+            // request validation
+            var book = await _context.Books.FirstOrDefaultAsync(b => b.SerialNumber == request.SerialNumber);
 
             if (book == null)
                 return NotFound($"No book serial number {request.SerialNumber} was found in the database");
 
+            // DTO validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            // if information on condition or notes were provided, it is considered as new by default
+            // POST logic
+            // if information on condition was not provided, it is considered as new by default
             if (string.IsNullOrEmpty(request.BookCondition))
                 request.BookCondition = "As new";
 
-
             var bookCondition = await _context.BookConditions.FirstOrDefaultAsync(bc => bc.Condition == request.BookCondition);
 
+            // if information on condition was not provided, it is considered empty
             if (request.Notes.IsNullOrEmpty())
                 request.Notes = "";
 
@@ -67,44 +68,39 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(List<BookCopyResponse>))]
         public async Task<ActionResult<List<BookCopyResponse>>> GetBookCopies([FromQuery, Required] GetBookCopyRequest filter)
         {
+            // GET by filter logic
             if (filter.Id == null && filter.SerialNumber == null && filter.Title == null && filter.Condition == null)
             {
                 return BadRequest("At least one filter (Id, Serial Number, Title, Condition) must be provided.");
             }
 
-            var query = _context.BookCopies.Include(bc => bc.Book)
-                                           .Include(bc => bc.BookCondition)
-                                           .Where(bc => (filter.Id == null || bc.ID == filter.Id)
+            var bookcopies = await _context.BookCopies.Where(bc => (filter.Id == null || bc.ID == filter.Id)
                                                     && (filter.SerialNumber == null || bc.SerialNumber == filter.SerialNumber)
                                                     && (filter.Title == null || bc.Book.Title == filter.Title)
                                                     && (filter.Condition == null || bc.BookCondition.Condition == filter.Condition))
-                                           .Select(bc => new BookCopyResponse
-                                           {
-                                               Id = bc.ID,
-                                               SerialNumber = bc.SerialNumber,
-                                               Title = bc.Book.Title,
-                                               BookCondition = bc.BookCondition.Condition,
-                                               Notes = bc.Notes
-                                           });
+                                                .Select(bc => new BookCopyResponse
+                                                {
+                                                    Id = bc.ID,
+                                                    SerialNumber = bc.SerialNumber,
+                                                    Title = bc.Book.Title,
+                                                    BookCondition = bc.BookCondition.Condition,
+                                                    Notes = bc.Notes
+                                                 })
+                                                .ToListAsync();
 
-            var result = await query.ToListAsync();
-
-            if (result == null || !result.Any())
-            {
-                return NotFound("No book copies found matching the given filters.");
-            }
-
-            return Ok(result);
+            return Ok(bookcopies);
         }
 
-        // tried to apply pagination due to the possiblity of a big number of data
-        [HttpGet]
-        [SwaggerResponse(200, Type = typeof(PaginatedBookCopyResponse))]
+        
+        [HttpGet("list")]
+        [SwaggerResponse(200, Type = typeof(PaginatedBookCopyResponse))] // tried to apply pagination due to the possiblity of a big number of data
         public async Task<ActionResult<PaginatedBookCopyResponse>> GetAllBookCopies([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
+            // FromQuery Validation
             if (pageNumber <= 0 || pageSize <= 0)
                 return BadRequest("Page number and page size must be greater than 0.");
 
+            // GET logic
             var query = _context.BookCopies.Select(bc => new BookCopyResponse
             {
                 Id = bc.ID,
@@ -137,21 +133,19 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> UpdateBookCopy(int id, [FromBody, Required] UpdateBookCopyRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (id < 1)
-                return BadRequest("Id must be positive");
-
-            if (request.NewCondition == null && request.NewNotes == null)
-                return BadRequest("At least one of 'Condition' or 'Notes' must be provided.");
-
-            var bookCopy = await _context.BookCopies.Include(bc => bc.Book)
-                                                    .Include(bc => bc.BookCondition)
-                                                    .FirstOrDefaultAsync(bc => bc.ID == id);
+            // FromRoute validation
+            var bookCopy = await _context.BookCopies.FirstOrDefaultAsync(bc => bc.ID == id);
 
             if (bookCopy == null)
                 return NotFound("Book copy not found");
+
+            // DTO validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // PUT logic
+            if (request.NewCondition == null && request.NewNotes == null)
+                return BadRequest("At least one of 'Condition' or 'Notes' must be provided.");
 
             if (request.NewCondition != null)
             {
@@ -160,7 +154,8 @@ namespace LibraryManagementAPI.Controllers
 
                 if (newCondition.ID <= oldConditionId)
                 {
-                    return BadRequest("Book condition must be worse than the current one");
+                    ModelState.AddModelError("NewCondition", "Book condition must be worse than the current one");
+                    return BadRequest(ModelState);
                 }
 
                 bookCopy.BookConditionID = newCondition.ID;
@@ -178,21 +173,18 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> DeleteBookCopy(int id)
         {
-            if (id < 1)
-                return BadRequest("Id must be positive");
-
-            var bookCopy = await _context.BookCopies.Include(bc => bc.Rents)
-                                                        .ThenInclude(bc => bc.RentReception)
-                                                    .FirstOrDefaultAsync(bc => bc.ID == id);
+            //FromRoute validation
+            var bookCopy = await _context.BookCopies.FirstOrDefaultAsync(bc => bc.ID == id);
 
             if (bookCopy == null)
                 return NotFound("Book copy not found.");
 
+            // DELETE logic
             // check if book is rented
             var isCurrentlyRented = bookCopy.Rents.Any(r => r.RentReception == null);
 
             if (isCurrentlyRented)
-                return BadRequest("Cannot delete a rented book copy");
+                return BadRequest("Cannot delete a rented book copy"); // 409?
 
             // update bookstock before deleting book copy
             var bookStock = await _context.BookStocks.FirstOrDefaultAsync(bs => bs.SerialNumber == bookCopy.SerialNumber);

@@ -28,6 +28,7 @@ namespace LibraryManagementAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // POST logic
             if (_context.Authors.Any(a => a.Name == author.Name))
             {
                 ModelState.AddModelError("Name", $"Author with name '{author.Name}' already exists");
@@ -49,11 +50,13 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(AuthorResponse))]
         public async Task<ActionResult<AuthorResponse>> GetAuthorByID(long id)
         {
+            // FromRoute validation
             var author = await _context.Authors.FindAsync(id);
 
             if (author == null)
                 return NotFound("Author not found");
 
+            // GET logic
             var response = new AuthorResponse
             {
                 AuthorId = author.ID,
@@ -67,6 +70,7 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(List<AuthorResponse>))]
         public async Task<ActionResult<List<AuthorResponse>>> GetAllAuthors()
         {
+            // GET logic
             var response = await _context.Authors
                 .Select(a => new AuthorResponse
                 {
@@ -82,6 +86,7 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> UpdateAuthor(long id, [FromBody, Required] AuthorRequest request)
         {
+            // FromRoute validation
             var author = await _context.Authors.FindAsync(id);
 
             if (author == null)
@@ -90,7 +95,8 @@ namespace LibraryManagementAPI.Controllers
             // initial dto validation
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            
+
+            // PUT logic
             if (_context.Authors.Any(a => a.Name == request.Name && a.ID != id))
             {
                 ModelState.AddModelError("Name", $"Author with name '{request.Name}' already exists");
@@ -107,11 +113,13 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> DeleteAuthor(long id)
         {
+            // FromRoute validation
             var author = await _context.Authors.FindAsync(id);
 
             if (author == null)
                 return NotFound("Author not found");
 
+            // DELETE logic
             // Check if there are books associated to the author
             var isAuthorLinkedToBooks = await _context.BookAuthors.AnyAsync(ba => ba.AuthorID == id);
 

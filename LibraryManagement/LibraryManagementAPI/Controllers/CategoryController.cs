@@ -30,6 +30,7 @@ namespace LibraryManagementAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // POST logic
             if (_context.Categories.Any(c => c.Name == category.Name))
             {
                 ModelState.AddModelError("Name", $"Category with name '{category.Name}' already exists");
@@ -51,11 +52,13 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(CategoryResponse))]
         public async Task<ActionResult<CategoryResponse>> GetCategoryByID(short id)
         {
+            // FromRoute validation
             var category = await _context.Categories.FindAsync(id);
 
             if (category == null)
                 return NotFound("Category not found");
 
+            // GET logic
             var response = new CategoryResponse
             {
                 CategoryId = category.ID,
@@ -69,21 +72,23 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(200, Type = typeof(List<CategoryResponse>))]
         public async Task<ActionResult<List<CategoryResponse>>> GetAllCategories()
         {
-                var response = await _context.Categories
-                    .Select(c => new CategoryResponse
-                    {
-                        CategoryId = c.ID,
-                        Name = c.Name
-                    })
-                    .ToListAsync();
+            // GET logic
+            var response = await _context.Categories
+                .Select(c => new CategoryResponse
+                {
+                    CategoryId = c.ID,
+                    Name = c.Name
+                })
+            .ToListAsync();
 
-                return Ok(response);
+            return Ok(response);
         }
 
         [HttpPut("{id}")]
         [SwaggerResponse(204)]
         public async Task<ActionResult> UpdateCategory(short id, [FromBody, Required] CategoryRequest request)
         {
+            // FromRoute validation
             var category = await _context.Categories.FindAsync(id);
 
             if (category == null)
@@ -93,7 +98,7 @@ namespace LibraryManagementAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-           
+            // PUT logic
             if (_context.Categories.Any(c => c.Name == request.Name && c.ID != id))
             {
                 ModelState.AddModelError("Name", $"Category with name '{request.Name}' already exists");
@@ -111,11 +116,13 @@ namespace LibraryManagementAPI.Controllers
         [SwaggerResponse(204)]
         public async Task<ActionResult> DeleteCategory(short id)
         {
+            // FromRoute validation
             var category = await _context.Categories.FindAsync(id);
 
             if (category == null)
                 return NotFound("Category not found");
 
+            // DELETE logic
             // Check if there are categories associated to the author
             var isCategoryLinkedToBooks = await _context.BookCategories.AnyAsync(ba => ba.CategoryID == id);
 
