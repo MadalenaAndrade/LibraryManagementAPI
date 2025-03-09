@@ -21,17 +21,21 @@ namespace LibraryManagementAPI.Controllers
             _context = context;
         }
 
-        [HttpPost("{clientId}")]
+        [HttpPost]
         [SwaggerResponse(201)]
-        public async Task<ActionResult> CreateRent(int clientId, [FromBody, Required] RentRequest request)
+        public async Task<ActionResult> CreateRent([FromBody, Required] RentRequest request)
         {
-            //FromRoute validation
-            var client = await _context.Clients.FirstOrDefaultAsync(c => c.ID == clientId);
+            //Client validation
+            var client = await _context.Clients.FirstOrDefaultAsync(c => c.ID == request.ClientId);
 
             if (client == null)
                 return NotFound("Client information not found. Please create a client file.");
 
-            
+            // DTO validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+
             // POST logic, check if book exists
             if (request.BookSerialNumber == null && request.BookCopyId == null)
             {
@@ -123,12 +127,12 @@ namespace LibraryManagementAPI.Controllers
             return CreatedAtAction(nameof(GetRentByID), new { id = rent.ID }, null);
         }
 
-        [HttpPost("{rentId}/reception")]
+        [HttpPost("reception")]
         [SwaggerResponse(201)]
-        public async Task<ActionResult> CreateRentReception(long rentId, [FromBody, Required] RentReceptionRequest request)
+        public async Task<ActionResult> CreateRentReception([FromBody, Required] RentReceptionRequest request)
         {
-            // FromRoute validation
-            var rent = await _context.Rents.FirstOrDefaultAsync(r => r.ID == rentId);
+            // Rent validation
+            var rent = await _context.Rents.FirstOrDefaultAsync(r => r.ID == request.RentId);
 
             if (rent == null)
                 return NotFound("No rented book was found");
@@ -137,8 +141,6 @@ namespace LibraryManagementAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (rentId <= 0)
-                return BadRequest("RentId must be a positive integer");
 
             // POST logic
             // check if book was not already delivered
@@ -238,12 +240,12 @@ namespace LibraryManagementAPI.Controllers
             return Ok(response);
         }
 
-        [HttpGet("{rentId}/reception")]
+        [HttpGet("{id}/reception")]
         [SwaggerResponse(200, Type = typeof(RentReceptionResponse))]
-        public async Task<ActionResult<RentReceptionResponse>> GetRentReceptionByID(long rentId)
+        public async Task<ActionResult<RentReceptionResponse>> GetRentReceptionByID(long id)
         {
             // FromRoute validation
-            var rentReception = await _context.RentReceptions.FirstOrDefaultAsync(rr => rr.RentID == rentId);
+            var rentReception = await _context.RentReceptions.FirstOrDefaultAsync(rr => rr.RentID == id);
 
             if (rentReception == null)
                 return NotFound("Rent reception not found");
