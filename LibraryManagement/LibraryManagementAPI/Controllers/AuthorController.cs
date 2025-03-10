@@ -124,7 +124,7 @@ namespace LibraryManagementAPI.Controllers
             var isAuthorLinkedToBooks = await _context.BookAuthors.AnyAsync(ba => ba.AuthorID == id);
 
             if (isAuthorLinkedToBooks)
-                return BadRequest("Author cannot be deleted because there is at least one relationship to a book.");
+                return Conflict("Author cannot be deleted because there is at least one relationship to a book.");
 
             _context.Authors.Remove(author);
             await _context.SaveChangesAsync();

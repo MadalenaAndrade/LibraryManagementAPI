@@ -127,7 +127,7 @@ namespace LibraryManagementAPI.Controllers
             var isCategoryLinkedToBooks = await _context.BookCategories.AnyAsync(ba => ba.CategoryID == id);
 
             if (isCategoryLinkedToBooks)
-                return BadRequest("Category cannot be deleted because there is at least one relationship to a book.");
+                return Conflict("Category cannot be deleted because there is at least one relationship to a book.");
 
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();

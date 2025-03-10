@@ -147,7 +147,7 @@ namespace LibraryManagementAPI.Controllers
             // DELETE logic
             // only delete if client has never rented
             if (client.Rents.Any())
-                return BadRequest("Cannot delete a client that has rented a book previously"); //409?
+                return Conflict("Cannot delete a client that has rented a book previously");
 
             _context.Clients.Remove(client);
             await _context.SaveChangesAsync();

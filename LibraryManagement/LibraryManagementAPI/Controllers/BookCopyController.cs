@@ -184,7 +184,7 @@ namespace LibraryManagementAPI.Controllers
             var isCurrentlyRented = bookCopy.Rents.Any(r => r.RentReception == null);
 
             if (isCurrentlyRented)
-                return BadRequest("Cannot delete a rented book copy"); // 409?
+                return Conflict("Cannot delete a rented book copy"); 
 
             // update bookstock before deleting book copy
             var bookStock = await _context.BookStocks.FirstOrDefaultAsync(bs => bs.SerialNumber == bookCopy.SerialNumber);

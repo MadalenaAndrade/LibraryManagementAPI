@@ -122,7 +122,7 @@ namespace LibraryManagementAPI.Controllers
 
             // DELETE logic
             if (publisher.Books.Any()) //if there are books associated to the publisher, it returns an error
-                return BadRequest("Cannot delete publisher because there are books associated with it");
+                return Conflict("Cannot delete publisher because there are books associated with it");
 
             _context.Publishers.Remove(publisher);
             await _context.SaveChangesAsync();

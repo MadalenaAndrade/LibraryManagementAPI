@@ -352,7 +352,7 @@ namespace LibraryManagementAPI.Controllers
             // ensure book is not being rented
             if (book.BookStock.AvailableAmount < book.BookStock.TotalAmount)
             {
-                return BadRequest($"There are books {book.Title} being rented");
+                return Conflict($"There are books {book.Title} being rented");
             }
 
             _context.Books.Remove(book);
