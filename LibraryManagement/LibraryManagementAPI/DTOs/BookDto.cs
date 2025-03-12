@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization; //to order the properties in swagger documentation
 using Microsoft.OpenApi.MicrosoftExtensions;
 using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.Filters;
 using static LibraryManagementAPI.DTOs.CustomAttributes;
 
 namespace LibraryManagementAPI.DTOs

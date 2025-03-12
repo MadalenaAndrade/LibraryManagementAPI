@@ -27,11 +27,11 @@ namespace LibraryManagementAPI
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            // if (app.Environment.IsDevelopment()){}
+            
+            app.UseSwagger();
+            app.UseSwaggerUI();
+          
 
             app.UseHttpsRedirection();
 
@@ -39,6 +39,8 @@ namespace LibraryManagementAPI
 
 
             app.MapControllers();
+
+            app.MapGet("/", () => "Library Management API is running! Access /swagger to explore the API.");
 
             app.Run();
         }
