@@ -18,7 +18,11 @@ namespace LibraryManagementAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            var connectionString = builder.Configuration.GetConnectionString("LibraryHubDatabase");
+            var connectionString = Environment.GetEnvironmentVariable("LibraryHubDatabase");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = builder.Configuration.GetValue<string>("LibraryHubDatabase");
+            }
 
             builder.Services.AddDbContext<LibraryDbContext>(options =>
                 options.UseSqlServer(connectionString)); // Use the connection string from appsettings.json or default from DbContext
