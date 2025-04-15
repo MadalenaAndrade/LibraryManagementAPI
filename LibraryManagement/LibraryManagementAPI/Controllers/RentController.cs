@@ -127,7 +127,7 @@ namespace LibraryManagementAPI.Controllers
             return CreatedAtAction(nameof(GetRentByID), new { id = rent.ID }, null);
         }
 
-        [HttpPost("reception")]
+        [HttpPost("Reception")]
         [SwaggerResponse(201)]
         public async Task<ActionResult> CreateRentReception([FromBody, Required] RentReceptionRequest request)
         {
@@ -212,7 +212,7 @@ namespace LibraryManagementAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetRentReceptionByID), new { rentId = reception.RentID }, null);
+            return CreatedAtAction(nameof(GetRentReceptionByID), new { id = reception.RentID }, null);
         }
 
         [HttpGet("{id}")]
@@ -228,6 +228,7 @@ namespace LibraryManagementAPI.Controllers
             // GET logic
             var response = new RentResponse
             {
+                RentId = rent.ID,
                 ClientId = rent.ClientID,
                 ClientName = rent.Client.Name,
                 BookCopyId = rent.BookCopyID,
@@ -240,7 +241,7 @@ namespace LibraryManagementAPI.Controllers
             return Ok(response);
         }
 
-        [HttpGet("{id}/reception")]
+        [HttpGet("{id}/Reception")]
         [SwaggerResponse(200, Type = typeof(RentReceptionResponse))]
         public async Task<ActionResult<RentReceptionResponse>> GetRentReceptionByID(long id)
         {
@@ -273,6 +274,7 @@ namespace LibraryManagementAPI.Controllers
             // GET logic
             var query = _context.Rents.Select(r => new RentResponse
             {
+                RentId = r.ID,
                 ClientId = r.ClientID,
                 ClientName = r.Client.Name,
                 BookCopyId = r.BookCopyID,
