@@ -62,4 +62,28 @@ namespace LibraryManagementAPI.DTOs
         [Required]
         public decimal TotalFine { get; set; }
     }
+
+    public class PaginatedRentResponse
+    {
+        [Required]
+        public int TotalRents { get; set; }
+        [Required]
+        public int CurrentPage { get; set; }
+        [Required]
+        public int PageSize { get; set; }
+        [Required]
+        public List<RentResponse> Rents { get; set; }
+    }
+
+    public class PaginatedRentReceptionResponse
+    {
+        [Required]
+        public int TotalRentReceptions { get; set; }
+        [Required]
+        public int CurrentPage { get; set; }
+        [Required]
+        public int PageSize { get; set; }
+        [Required]
+        public List<RentReceptionResponse> RentReceptions { get; set; }
+    }
 }

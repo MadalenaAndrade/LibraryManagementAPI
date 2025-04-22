@@ -264,8 +264,8 @@ namespace LibraryManagementAPI.Controllers
         }
 
         [HttpGet("list")]
-        [SwaggerResponse(200, Type = typeof(List<RentResponse>))]
-        public async Task<ActionResult<List<RentResponse>>> GetAllRents(int pageNumber = 1, int pageSize = 10)
+        [SwaggerResponse(200, Type = typeof(PaginatedRentResponse))]
+        public async Task<ActionResult<PaginatedRentResponse>> GetAllRents(int pageNumber = 1, int pageSize = 10)
         {
             // FromQuery pagination validation
             if (pageNumber <= 0 || pageSize <= 0)
@@ -304,8 +304,8 @@ namespace LibraryManagementAPI.Controllers
         }
 
         [HttpGet("ReceptionsList")]
-        [SwaggerResponse(200, Type = typeof(List<RentReceptionResponse>))]
-        public async Task<ActionResult<List<RentResponse>>> GetAllRentReceptions(int pageNumber = 1, int pageSize = 10)
+        [SwaggerResponse(200, Type = typeof(PaginatedRentReceptionResponse))]
+        public async Task<ActionResult<PaginatedRentReceptionResponse>> GetAllRentReceptions(int pageNumber = 1, int pageSize = 10)
         {
             // FromQuery pagination validation
             if (pageNumber <= 0 || pageSize <= 0)
