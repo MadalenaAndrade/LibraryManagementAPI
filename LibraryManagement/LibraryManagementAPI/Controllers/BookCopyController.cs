@@ -76,7 +76,7 @@ namespace LibraryManagementAPI.Controllers
 
             var bookcopies = await _context.BookCopies.Where(bc => (filter.Id == null || bc.ID == filter.Id)
                                                     && (filter.SerialNumber == null || bc.SerialNumber == filter.SerialNumber)
-                                                    && (filter.Title == null || bc.Book.Title == filter.Title)
+                                                    && (filter.Title == null || bc.Book.Title.Contains(filter.Title))
                                                     && (filter.Condition == null || bc.BookCondition.Condition == filter.Condition))
                                                 .Select(bc => new BookCopyResponse
                                                 {
