@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using EFCoreClasses;
 using LibraryManagementAPI.Controllers;
+using LibraryManagementAPI.Middlewares;
 
 namespace LibraryManagementAPI
 {
@@ -30,21 +31,31 @@ namespace LibraryManagementAPI
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            // if (app.Environment.IsDevelopment()){}
-            
-            app.UseSwagger();
-            app.UseSwaggerUI();
-          
 
             app.UseHttpsRedirection();
 
+            // Configure the HTTP request pipeline.
+            // Serve frontend React
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+            
+
+
+            app.UseMiddleware<AdminSafeListMiddleware>(builder.Configuration["AdminSafeList"]);
+
+
             app.UseAuthorization();
-
-
+       
             app.MapControllers();
+            app.MapFallbackToFile("index.html");
 
-            app.MapGet("/", () => "Library Management API is running! Access /swagger to explore the API.");
+            //app.MapGet("/", () => "Library Management API is running! Access /swagger to explore the API.");
 
             app.Run();
         }
