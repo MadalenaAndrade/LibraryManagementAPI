@@ -199,7 +199,7 @@ cd LibraryManagementAPI
 "LibraryHubDatabase": "Server=YOUR_SERVER_NAME\\\\SQLEXPRESS;Database=LibraryDB;Trusted_Connection=True;TrustServerCertificate=True"
 ```
 
-> **Note1:** You can introduce a default connection string on [`LibraryDbContext.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/LibraryDbContext.cs) <br> > **Note2:** For local development, you can also add the AdminSafeList key in your appsetting.Development.json file with the allowed IP addresses separated by commas.
+> **Note1:** You can introduce a default connection string on [`LibraryDbContext.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/LibraryDbContext.cs) <br>  **Note2:** For local development, you can also add the AdminSafeList key in your appsetting.Development.json file with the allowed IP addresses separated by commas.
 
 **4.** Add a Project Reference to EFCoreClasses on LibraryManagementAPI
 
