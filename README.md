@@ -12,6 +12,7 @@ This project supports both **local development** (running with SQL Server in you
 - [📂 Main Project Structure](#-main-project-structure)
 - [📡 API Endpoints](#-api-endpoints)
 - [🚀 Getting Started (Local, Azure and Terraform)](#-getting-started)
+- [🌐 Frontend Project](#-frontend-project)
 - [⚠️ Note](#️-note)
 
 ## 🛠 Technologies Used
@@ -46,22 +47,22 @@ This project supports both **local development** (running with SQL Server in you
 │ │ ├─ 📄 [`BookAuthorConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookAuthorConfiguration.cs) <br>
 │ │ ├─ 📄 [`BookCategoryConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookCategoryConfiguration.cs)  
 │ │ ├─ 📄 [`BookConditionConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookConditionConfiguration.cs)  
-│ │ ├─ 📄 [`BookConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookConfiguration.cs)  
-│ │ ├─ 📄 [`BookCopyConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookCopyConfiguration.cs)  
-│ │ ├─ 📄 [`BookStockConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookStockConfiguration.cs)  
-│ │ ├─ 📄 [`ClientConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/ClientConfiguration.cs)  
+│ │ ├─ 📄 [`BookConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookConfiguration.cs) <br>
+│ │ ├─ 📄 [`BookCopyConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookCopyConfiguration.cs) <br>
+│ │ ├─ 📄 [`BookStockConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/BookStockConfiguration.cs) <br>
+│ │ ├─ 📄 [`ClientConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/ClientConfiguration.cs) <br>
 │ │ ├─ 📄 [`RentConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/RentConfiguration.cs) <br>
-│ │ └─ 📄 [`RentReceptionConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/RentReceptionConfiguration.cs)  
+│ │ └─ 📄 [`RentReceptionConfiguration.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Configurations/RentReceptionConfiguration.cs) <br>
 │ ├─ 📂 [_Migrations_](https://github.com/MadalenaAndrade/LibraryManagementAPI/tree/main/LibraryManagement/EFCoreClasses/Migrations) # Database migration files <br>
 │ ├─ 📂 [_Models_](https://github.com/MadalenaAndrade/LibraryManagementAPI/tree/main/LibraryManagement/EFCoreClasses/Models) # Database models <br>
-│ │ ├─ 📄 [`Author.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Author.cs)  
-│ │ ├─ 📄 [`Book.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Book.cs)  
-│ │ ├─ 📄 [`BookAuthor.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookAuthor.cs)  
-│ │ ├─ 📄 [`BookCategory.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookCategory.cs)  
-│ │ ├─ 📄 [`BookCondition.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookCondition.cs)
-│ │ ├─ 📄 [`BookCopy.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookCopy.cs)  
-│ │ ├─ 📄 [`BookStock.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookStock.cs)  
-│ │ ├─ 📄 [`Category.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Category.cs)  
+│ │ ├─ 📄 [`Author.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Author.cs) <br>
+│ │ ├─ 📄 [`Book.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Book.cs) <br>
+│ │ ├─ 📄 [`BookAuthor.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookAuthor.cs) <br>
+│ │ ├─ 📄 [`BookCategory.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookCategory.cs) <br>
+│ │ ├─ 📄 [`BookCondition.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookCondition.cs)<br>
+│ │ ├─ 📄 [`BookCopy.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookCopy.cs) <br>
+│ │ ├─ 📄 [`BookStock.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/BookStock.cs) <br>
+│ │ ├─ 📄 [`Category.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Category.cs) <br>
 │ │ ├─ 📄 [`Client.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Client.cs) <br>
 │ │ ├─ 📄 [`Publisher.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Publisher.cs) <br>
 │ │ ├─ 📄 [`Rent.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/Models/Rent.cs) <br>
@@ -84,12 +85,13 @@ This project supports both **local development** (running with SQL Server in you
 │ │ ├─ 📄 [`ClientDto.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/DTOs/ClientDto.cs) <br>
 │ │ ├─ 📄 [`PublisherDto.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/DTOs/PublisherDto.cs) <br>
 │ │ ├─ 📄 [`RentDto.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/DTOs/RentDto.cs) <br>
-│ │ └─ 📄 [`CustomAttributes.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/DTOs/CustomAttributes.cs)  
+│ │ └─ 📄 [`CustomAttributes.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/DTOs/CustomAttributes.cs) <br>
+│ ├─ 📂 [_Middlewares_](https://github.com/MadalenaAndrade/LibraryManagementAPI/tree/main/LibraryManagement/LibraryManagementAPI/Middlewares) # Custom middleware components <br>
+│ │ └─ 📄 [`AdminSafeListMiddleware.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/Middlewares/AdminSafeListMiddleware.cs) # Handles IP whitelisting for admin routes<br>
 │ ├─ 📂 [_Properties_](https://github.com/MadalenaAndrade/LibraryManagementAPI/tree/main/LibraryManagement/LibraryManagementAPI/Properties) # Launch settings <br>
 │ ├─ 📄 [`Program.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/Program.cs) # Entry point of the Web API <br>
-│ ├─ 📝 [`appsetting.Development.json`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/appsettings.Development.json) # Development environment settings <br>
-│ └─ 📝 [`appsetting.json`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/appsettings.json) # Main settings (connection strings) <br>
-└─ 🧾 [`README.md`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/README.md)
+│ └─ 📂 [_wwwroot_](https://github.com/MadalenaAndrade/LibraryManagementAPI/tree/main/LibraryManagement/LibraryManagementAPI/wwwroot) # Frontend static files <br>
+└─ 🧾 [`README.md`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/README.md)<br>
 
 ## 📡 API Endpoints
 
@@ -197,7 +199,7 @@ cd LibraryManagementAPI
 "LibraryHubDatabase": "Server=YOUR_SERVER_NAME\\\\SQLEXPRESS;Database=LibraryDB;Trusted_Connection=True;TrustServerCertificate=True"
 ```
 
-Note: You can introduce a default connection string on [`LibraryDbContext.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/LibraryDbContext.cs)
+> **Note1:** You can introduce a default connection string on [`LibraryDbContext.cs`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/EFCoreClasses/LibraryDbContext.cs) <br> > **Note2:** For local development, you can also add the AdminSafeList key in your appsetting.Development.json file with the allowed IP addresses separated by commas.
 
 **4.** Add a Project Reference to EFCoreClasses on LibraryManagementAPI
 
@@ -243,13 +245,19 @@ ALTER ROLE db_ddladmin ADD MEMBER Libmanagementapi;
 **8.** Retrieve the **Connection String** with Microsoft Entra Integrated Authentication from the **Azure SQL Database** settings <br>
 
 - In **Azure**, go to App Service > Settings > Environment Variables and add:
-  - Name: `LibraryHubDatabase`
-  - Value: your connection string
+
+  - Name: `LibraryHubDatabase` <br>
+    Value: your connection string
+  - Name: `AdminSafeList` <br>
+    Value: comma-separated list of allowed IP addresses for admin access
+
 - Replace the **connection string** in [`appsetting.Development.json`](https://github.com/MadalenaAndrade/LibraryManagementAPI/blob/main/LibraryManagement/LibraryManagementAPI/appsettings.json)
 
 ```sh
 "LibraryHubDatabase": "Server=YOUR_AZURE_SQL_SERVER;Initial Catalog=LibraryCodeFirst;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default;"
 ```
+
+> **Important:** These environment variable are used by the application in production. The appsettings.Development.json file is only used for local development and should not be published or committed to source control.
 
 **9.** Download the **Publish Profile** from the **Azure App Service** <br>
 
@@ -350,6 +358,19 @@ terraform apply
 
 **Additional Tips** <br>
 Terraform Extension for Visual Studio Code: For a better development experience, you may install the HashiCorp Terraform extension for Visual Studio Code. It provides syntax highlighting, autocompletion, and other helpful features.
+
+## 🌐 Frontend Project
+
+A separate project was developed to experiment with React and demonstrate how this API can be consumed from a web interface. The frontend interacts with the endpoints provided by this API to fetch and display data in a dynamic, user-friendly way.<br>
+📁 [Frontend Repository](https://github.com/MadalenaAndrade/LibraryManagementUI)<br>
+🌍 [Live Demo](https://libmanagementapi-ashnc2hsh3gma6fc.westeurope-01.azurewebsites.net)
+
+To support the frontend on the same server as the API, the following adjustment was made:
+
+- A wwwroot folder was added to serve the compiled frontend files.<br>
+- Configured the Program.cs to serve static files by enabling middleware with: app.UseDefaultFiles(); app.UseStaticFiles(); app.MapFallbackToFile("index.html");
+
+Note: In the deployed version, the API has IP restrictions in place for security reasons. This means that while the frontend interface may allow actions like creating or editing records, the API will respond with Access Denied for those requests unless the client's IP is authorized. Only GET requests are expected to work successfully in the live demo.
 
 ## ⚠️ Note
 
